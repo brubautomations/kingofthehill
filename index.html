@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>King of the Hill — PSE Trading Championship</title>
+<meta name="google-signin-client_id" content="501217452261-dnphdo1abncnt5nhqcukvut952h0shjf.apps.googleusercontent.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root {
+  --bg: #060608;
+  --bg2: #0c0c10;
+  --bg3: #12121a;
+  --card: #16161f;
+  --border: #1e1e2a;
+  --border2: #2a2a3a;
+  --white: #f0f0f5;
+  --gray: #6a6a80;
+  --gray2: #3a3a50;
+
+  /* Tier colors */
+  --dirt: #8B6914;
+  --bronze: #cd7f32;
+  --silver: #c0c0c0;
+  --gold: #ffd700;
+  --platinum: #60efff;
+  --diamond: #a8d8ea;
+  --obsidian: #9b59b6;
+  --obsidian2: #6c3483;
+  --koth: #00c853;
+  --crown: #ffd700;
+
+  --green: #00e676;
+  --red: #ff1744;
+  --green-dim: rgba(0,230,118,0.1);
+  --red-dim: rgba(255,23,68,0.1);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+/* ── PAGES ── */
+.page{display:none;min-height:100vh;}
+.page.active{display:block;}
+
+/* ══════════════════════════════════════════
+   LANDING PAGE
+══════════════════════════════════════════ */
+#page-landing {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  position:relative;
+  overflow:hidden;
+  padding:40px 20px;
+}
+#page-landing > *:not(video):not(.landing-bg) {
+  position:relative;
+  z-index:1;
+}
+
+.landing-bg {
+  position:absolute;
+  inset:0;
+  background:rgba(6,6,8,0.55);
+  z-index:0;
+  pointer-events:none;
+}
+
+.landing-logo {
+  width:140px;
+  height:140px;
+  margin-bottom:24px;
+  object-fit:contain;
+}
+
+.landing-eyebrow {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.65rem;
+  color:var(--obsidian);
+  letter-spacing:4px;
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+
+.landing-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(4rem,12vw,9rem);
+  line-height:0.9;
+  text-align:center;
+  margin-bottom:8px;
+  color:var(--white);
+  letter-spacing:2px;
+}
+
+.landing-title .hill {
+  color:var(--koth);
+  display:block;
+  text-shadow: 0 0 60px rgba(255,107,53,0.4);
+}
+
+.landing-sub {
+  font-size:0.9rem;
+  color:var(--gray);
+  text-align:center;
+  max-width:420px;
+  line-height:1.7;
+  margin-bottom:48px;
+}
+
+.landing-tiers {
+  display:flex;
+  gap:6px;
+  margin-bottom:48px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.tier-pill {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.58rem;
+  font-weight:700;
+  letter-spacing:1px;
+  padding:4px 10px;
+  border-radius:20px;
+  border:1px solid;
+}
+
+.tp-dirt{color:var(--dirt);border-color:var(--dirt);background:rgba(139,105,20,0.1);}
+.tp-bronze{color:var(--bronze);border-color:var(--bronze);background:rgba(205,127,50,0.1);}
+.tp-silver{color:var(--silver);border-color:var(--silver);background:rgba(192,192,192,0.1);}
+.tp-gold{color:var(--gold);border-color:var(--gold);background:rgba(255,215,0,0.1);}
+.tp-platinum{color:var(--platinum);border-color:var(--platinum);background:rgba(96,239,255,0.1);}
+.tp-diamond{color:var(--diamond);border-color:var(--diamond);background:rgba(168,216,234,0.1);}
+.tp-obsidian{color:var(--obsidian);border-color:var(--obsidian);background:rgba(155,89,182,0.15);animation:pulse-obsidian 2s ease-in-out infinite;}
+@keyframes pulse-obsidian{0%,100%{box-shadow:0 0 0 0 rgba(155,89,182,0.3)}50%{box-shadow:0 0 12px 2px rgba(155,89,182,0.2)}}
+
+.landing-actions {
+  display:flex;
+  gap:14px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+.btn-primary {
+  background:var(--koth);
+  color:#000;
+  border:none;
+  border-radius:8px;
+  padding:14px 32px;
+  font-family:'Inter',sans-serif;
+  font-size:0.88rem;
+  font-weight:700;
+  letter-spacing:1px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,107,53,0.35);}
+
+.btn-secondary {
+  background:transparent;
+  color:var(--white);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  padding:14px 32px;
+  font-family:'Inter',sans-serif;
+  font-size:0.88rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-secondary:hover{border-color:var(--gray);background:var(--bg3);}
+
+.landing-stats {
+  display:flex;
+  gap:48px;
+  margin-top:64px;
+  padding-top:40px;
+  border-top:1px solid var(--border);
+}
+
+.l-stat-num {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2rem;
+  color:var(--white);
+  display:block;
+}
+.l-stat-lbl {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.55rem;
+  color:var(--gray);
+  letter-spacing:2px;
+}
+
+/* ══════════════════════════════════════════
+   AUTH MODAL
+══════════════════════════════════════════ */
+.modal-overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  z-index:200;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.show{display:flex;}
+.modal {
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:16px;
+  padding:36px;
+  width:100%;
+  max-width:420px;
+  position:relative;
+}
+.modal-close {
+  position:absolute;
+  top:16px;right:16px;
+  background:none;border:none;
+  color:var(--gray);font-size:1.2rem;cursor:pointer;
+}
+.modal-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2rem;
+  color:var(--white);
+  margin-bottom:6px;
+  letter-spacing:1px;
+}
+.modal-sub {
+  font-size:0.78rem;
+  color:var(--gray);
+  margin-bottom:28px;
+}
+.form-group {
+  margin-bottom:16px;
+}
+.form-group label {
+  display:block;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6rem;
+  color:var(--gray);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:7px;
+}
+.form-group input {
+  width:100%;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  padding:12px 14px;
+  color:var(--white);
+  font-family:'Inter',sans-serif;
+  font-size:0.88rem;
+  outline:none;
+  transition:border-color 0.15s;
+}
+.form-group input:focus{border-color:var(--koth);}
+.form-group input::placeholder{color:var(--gray2);}
+.form-error{font-size:0.72rem;color:var(--red);margin-top:4px;display:none;}
+.modal-btn {
+  width:100%;
+  padding:13px;
+  border-radius:8px;
+  border:none;
+  background:var(--koth);
+  color:#000;
+  font-family:'Inter',sans-serif;
+  font-size:0.88rem;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:8px;
+  transition:all 0.15s;
+  letter-spacing:0.5px;
+}
+.modal-btn:hover{opacity:0.9;}
+.modal-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.modal-switch {
+  text-align:center;
+  margin-top:20px;
+  font-size:0.78rem;
+  color:var(--gray);
+}
+.modal-switch a{color:var(--koth);cursor:pointer;text-decoration:none;}
+.consent-row {
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-bottom:16px;
+}
+.consent-row input[type=checkbox]{margin-top:2px;accent-color:var(--koth);}
+.consent-row label{font-size:0.72rem;color:var(--gray);line-height:1.5;}
+
+/* ══════════════════════════════════════════
+   MAIN APP LAYOUT
+══════════════════════════════════════════ */
+#page-app {
+  display:none;
+  flex-direction:column;
+  min-height:100vh;
+}
+#page-app.active{display:flex;}
+
+/* TOPBAR */
+.topbar {
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;
+  height:54px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.topbar-logo {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.4rem;
+  letter-spacing:2px;
+  color:var(--white);
+}
+.topbar-logo span{color:var(--koth);}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+
+/* User rank badge */
+.user-rank-badge {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  padding:6px 14px;
+  cursor:pointer;
+}
+.rank-icon{font-size:1rem;}
+.rank-info{line-height:1.2;}
+.rank-name{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;}
+.rank-elo{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);}
+
+.topbar-btn {
+  background:none;border:1px solid var(--border2);
+  border-radius:6px;padding:6px 14px;
+  color:var(--white);font-size:0.75rem;font-weight:600;
+  cursor:pointer;transition:all 0.15s;
+}
+.topbar-btn:hover{border-color:var(--gray);background:var(--bg3);}
+.topbar-btn.logout{color:var(--red);border-color:rgba(255,23,68,0.3);}
+
+/* APP LAYOUT */
+.app-body {
+  display:grid;
+  grid-template-columns:200px 1fr;
+  flex:1;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  padding:16px 0;
+  display:flex;
+  flex-direction:column;
+}
+.nav-section {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.52rem;
+  color:var(--gray2);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  padding:12px 18px 5px;
+}
+.nav-item {
+  padding:10px 18px;
+  font-size:0.78rem;
+  font-weight:500;
+  color:var(--gray);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  transition:all 0.12s;
+  border-left:2px solid transparent;
+}
+.nav-item:hover{color:var(--white);background:var(--bg3);}
+.nav-item.active{color:var(--koth);border-left-color:var(--koth);background:rgba(255,107,53,0.06);}
+.nav-item .nav-icon{font-size:0.9rem;width:16px;text-align:center;}
+
+/* MAIN CONTENT */
+.main {
+  overflow-y:auto;
+  background:var(--bg);
+}
+.view{display:none;padding:24px;}
+.view.active{display:block;}
+.view-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.8rem;
+  letter-spacing:1px;
+  color:var(--white);
+  margin-bottom:20px;
+}
+
+/* ── CARDS ── */
+.card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+}
+.card-title {
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.58rem;
+  color:var(--gray);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:14px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.stat-lbl{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--white);}
+.stat-val.green{color:var(--green);}
+.stat-val.red{color:var(--red);}
+.stat-val.gold{color:var(--gold);}
+.stat-sub{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);margin-top:3px;}
+
+/* ── TABLES ── */
+.data-table{width:100%;border-collapse:collapse;}
+.data-table th{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);letter-spacing:1px;text-transform:uppercase;padding:8px 12px;text-align:right;border-bottom:1px solid var(--border);font-weight:400;}
+.data-table th:first-child{text-align:left;}
+.data-table td{font-family:'JetBrains Mono',monospace;padding:10px 12px;text-align:right;border-bottom:1px solid rgba(30,30,42,0.5);font-size:0.72rem;color:var(--gray);}
+.data-table td:first-child{text-align:left;color:var(--white);font-weight:600;}
+.data-table tr:hover td{background:rgba(255,255,255,0.02);}
+.data-table .green{color:var(--green);}
+.data-table .red{color:var(--red);}
+
+/* ── TRADE PANEL ── */
+.trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.trade-side-btn{padding:10px;border-radius:8px;border:1px solid var(--border2);font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;background:transparent;color:var(--gray);letter-spacing:1px;transition:all 0.15s;}
+.trade-side-btn.buy.active{background:var(--green-dim);color:var(--green);border-color:var(--green);}
+.trade-side-btn.sell.active{background:var(--red-dim);color:var(--red);border-color:var(--red);}
+.trade-input-group{margin-bottom:12px;}
+.trade-input-group label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.trade-input-group input,.trade-input-group select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.82rem;outline:none;transition:border-color 0.15s;}
+.trade-input-group input:focus,.trade-input-group select:focus{border-color:var(--koth);}
+.trade-input-group select option{background:var(--bg3);}
+.trade-submit{width:100%;padding:12px;border-radius:8px;border:none;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;margin-top:4px;transition:all 0.15s;letter-spacing:1px;}
+.trade-submit.buy{background:var(--green);color:#000;}
+.trade-submit.sell{background:var(--red);color:#fff;}
+.trade-submit:hover{opacity:0.9;transform:translateY(-1px);}
+
+/* ── LEADERBOARD ── */
+.lb-row{display:grid;grid-template-columns:40px 1fr 100px 100px 80px;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(30,30,42,0.4);transition:background 0.1s;}
+.lb-row:hover{background:rgba(255,255,255,0.02);}
+.lb-row.koth-row{background:rgba(255,107,53,0.05);border-left:2px solid var(--koth);}
+.lb-row.crown-row{background:rgba(255,215,0,0.06);border-left:2px solid var(--crown);}
+.lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gray2);text-align:center;}
+.lb-rank.top1{color:var(--crown);}
+.lb-rank.top3{color:var(--bronze);}
+.lb-player{display:flex;align-items:center;gap:10px;}
+.lb-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--gray);border:1px solid var(--border2);}
+.lb-username{font-size:0.8rem;font-weight:600;color:var(--white);}
+.lb-badges{display:flex;gap:4px;margin-top:2px;}
+.lb-elo{font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;color:var(--white);text-align:right;}
+.lb-return{font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-align:right;}
+.lb-tier-badge{text-align:right;}
+
+/* ── TIER BADGES ── */
+.tier-badge{font-family:'JetBrains Mono',monospace;font-size:0.52rem;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:4px;display:inline-block;}
+.tb-dirt{color:var(--dirt);background:rgba(139,105,20,0.15);}
+.tb-bronze{color:var(--bronze);background:rgba(205,127,50,0.15);}
+.tb-silver{color:var(--silver);background:rgba(192,192,192,0.1);}
+.tb-gold{color:var(--gold);background:rgba(255,215,0,0.12);}
+.tb-platinum{color:var(--platinum);background:rgba(96,239,255,0.1);}
+.tb-diamond{color:var(--diamond);background:rgba(168,216,234,0.1);}
+.tb-obsidian{color:var(--obsidian);background:rgba(155,89,182,0.2);animation:pulse-obsidian 2s ease-in-out infinite;}
+.tb-koth{color:var(--koth);background:rgba(255,107,53,0.15);}
+.tb-crown{color:var(--crown);background:rgba(255,215,0,0.15);}
+
+/* ── SHARE CARD ── */
+#share-canvas{display:none;}
+.share-preview{border-radius:12px;overflow:hidden;max-width:400px;margin:0 auto;}
+
+/* ── LEAGUE ── */
+.league-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;cursor:pointer;transition:all 0.15s;}
+.league-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.league-name{font-size:0.9rem;font-weight:700;color:var(--white);margin-bottom:4px;}
+.league-meta{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);}
+
+/* ── NOTIFICATIONS ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:14px 18px;font-size:0.78rem;z-index:999;display:none;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+.toast.show{display:block;animation:slideIn 0.3s ease;}
+.toast-title{font-weight:700;font-size:0.68rem;margin-bottom:3px;}
+.toast-body{color:var(--gray);line-height:1.5;}
+.toast.success .toast-title{color:var(--green);}
+.toast.error .toast-title{color:var(--red);}
+.toast.info .toast-title{color:var(--koth);}
+
+/* GOOGLE SIGN IN */
+.google-btn {
+  width:100%;
+  padding:13px;
+  border-radius:8px;
+  border:1px solid var(--border2);
+  background:var(--bg3);
+  color:var(--white);
+  font-family:'Inter',sans-serif;
+  font-size:0.88rem;
+  font-weight:600;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  transition:all 0.15s;
+  margin-bottom:12px;
+}
+.google-btn:hover{border-color:var(--green);background:rgba(0,200,83,0.05);}
+.google-btn img{width:20px;height:20px;}
+
+/* ONBOARDING MODAL */
+.onboard-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:36px;width:100%;max-width:420px;}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── CONFIRM MODAL ── */
+.confirm-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:28px;width:100%;max-width:380px;}
+.confirm-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--white);margin-bottom:16px;}
+.confirm-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.72rem;}
+.confirm-row:last-of-type{border-bottom:none;}
+.confirm-row .lbl{color:var(--gray);}
+.confirm-row .val{color:var(--white);font-weight:700;}
+.confirm-btns{display:flex;gap:10px;margin-top:18px;}
+.confirm-btn{flex:1;padding:11px;border-radius:8px;border:none;font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;transition:all 0.15s;letter-spacing:0.5px;}
+.confirm-btn.yes{background:var(--green);color:#000;}
+.confirm-btn.no{background:var(--bg3);color:var(--gray);border:1px solid var(--border2);}
+
+/* ── ELO ANIMATION ── */
+.elo-flash{animation:eloFlash 0.6s ease;}
+@keyframes eloFlash{0%,100%{opacity:1}50%{opacity:0.3;transform:scale(1.1);color:var(--green)}}
+
+/* ── RANK PROGRESS BAR ── */
+.rank-progress{margin-top:12px;}
+.rank-progress-label{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);margin-bottom:6px;}
+.rank-progress-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.rank-progress-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+
+/* ── OBSIDIAN GLOW ── */
+.obsidian-glow{box-shadow:0 0 20px rgba(155,89,182,0.3);}
+.koth-glow{box-shadow:0 0 20px rgba(255,107,53,0.3);}
+.crown-glow{box-shadow:0 0 20px rgba(255,215,0,0.3);}
+</style>
+</head>
+<body>
+
+<!-- ══ LANDING ══ -->
+<div id="page-landing" class="page active">
+  <div class="landing-bg"></div>
+  <video autoplay muted loop playsinline id="landing-video" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0.35;">
+    <source src="assets/bg.mp4" type="video/mp4">
+  </video>
+  <img src="assets/logo.png" class="landing-logo" onerror="this.style.display='none'">
+  <div class="landing-eyebrow"><span style="color:var(--green)">Unicapital Securities</span></div>
+  <div class="landing-title">
+    King of<br>the <span class="hill">Hill</span>
+  </div>
+  <div class="landing-sub">A stock market simulation built on real PSE data. Trade virtual money against real prices, outperform the index daily, climb the ranks and be the one true King.</div>
+
+  <div class="landing-actions">
+    <div id="g_id_onload"
+      data-client_id="501217452261-dnphdo1abncnt5nhqcukvut952h0shjf.apps.googleusercontent.com"
+      data-callback="handleGoogleSignIn"
+      data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="filled_black"
+      data-text="continue_with"
+      data-shape="rectangular"
+      data-logo_alignment="left"
+      data-width="320">
+    </div>
+  </div>
+  <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:#3a3a50;letter-spacing:1px;z-index:1;white-space:nowrap;">
+    Powered by <a href="https://brubai.net/" target="_blank" style="color:#4a4a65;text-decoration:none;" onmouseover="this.style.color='#00c853'" onmouseout="this.style.color='#4a4a65'">BRUB AI</a>
+  </div>
+
+</div>
+
+<!-- Auth handled directly on landing via Google Sign In -->
+
+<!-- ══ ONBOARDING MODAL — first time Google sign in ══ -->
+<div class="modal-overlay" id="onboard-modal">
+  <div class="onboard-modal">
+    <div class="modal-title">One More Thing</div>
+    <div class="modal-sub">Set up your King of the Hill profile.</div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="onboard-username" placeholder="thomasianbaddie316" maxlength="20">
+      <div class="form-error" id="err-onboard-username">Username taken or invalid.</div>
+    </div>
+    <div class="form-group">
+      <label>School (optional)</label>
+      <input type="text" id="onboard-school" placeholder="UST, DLSU, UP, Ateneo...">
+    </div>
+    <div style="font-size:0.68rem;color:var(--gray);margin-bottom:16px;line-height:1.6;">
+      Signed in as <span id="onboard-email" style="color:var(--green);"></span>
+    </div>
+    <button class="modal-btn" onclick="completeOnboarding()" id="btn-onboard">START TRADING</button>
+  </div>
+</div>
+
+<!-- ══ CONFIRM MODAL ══ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="confirm-modal">
+    <div class="confirm-title">⚡ Confirm Order</div>
+    <div class="confirm-row"><span class="lbl">STOCK</span><span class="val" id="cf-stock"></span></div>
+    <div class="confirm-row"><span class="lbl">SIDE</span><span class="val" id="cf-side"></span></div>
+    <div class="confirm-row"><span class="lbl">SHARES</span><span class="val" id="cf-shares"></span></div>
+    <div class="confirm-row"><span class="lbl">PRICE</span><span class="val" id="cf-price"></span></div>
+    <div class="confirm-row"><span class="lbl">TOTAL</span><span class="val" id="cf-total"></span></div>
+    <div class="confirm-btns">
+      <button class="confirm-btn yes" onclick="executeOrder()">CONFIRM</button>
+      <button class="confirm-btn no" onclick="closeConfirm()">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toast-title"></div>
+  <div class="toast-body" id="toast-body"></div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="page-app" class="page">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">KING OF THE <span>HILL</span></div>
+    <div class="topbar-right">
+      <div class="user-rank-badge" onclick="navTo('profile')">
+        <span class="rank-icon" id="topbar-tier-icon">🟤</span>
+        <div class="rank-info">
+          <div class="rank-name" id="topbar-username">—</div>
+          <div class="rank-elo" id="topbar-elo">— ELO</div>
+        </div>
+      </div>
+      <button class="topbar-btn logout" onclick="logout()">SIGN OUT</button>
+    </div>
+  </div>
+
+  <!-- APP BODY -->
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="nav-section">Trading</div>
+      <div class="nav-item active" id="nav-dashboard" onclick="navTo('dashboard')">
+        <span class="nav-icon">◈</span> Dashboard
+      </div>
+      <div class="nav-item" id="nav-trade" onclick="navTo('trade')">
+        <span class="nav-icon">⇅</span> Trade
+      </div>
+      <div class="nav-item" id="nav-portfolio" onclick="navTo('portfolio')">
+        <span class="nav-icon">◉</span> Portfolio
+      </div>
+      <div class="nav-section">Competition</div>
+      <div class="nav-item" id="nav-leaderboard" onclick="navTo('leaderboard')">
+        <span class="nav-icon">👑</span> Leaderboard
+      </div>
+      <div class="nav-item" id="nav-leagues" onclick="navTo('leagues')">
+        <span class="nav-icon">⊞</span> Leagues
+      </div>
+      <div class="nav-section">Account</div>
+      <div class="nav-item" id="nav-history" onclick="navTo('history')">
+        <span class="nav-icon">≡</span> Trade History
+      </div>
+      <div class="nav-item" id="nav-profile" onclick="navTo('profile')">
+        <span class="nav-icon">◇</span> My Profile
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="view-title">Dashboard</div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-lbl">Portfolio Value</div>
+            <div class="stat-val gold" id="dash-portval">₱100,000.00</div>
+            <div class="stat-sub" id="dash-portreturn">+₱0.00 (0.00%)</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-lbl">Available Cash</div>
+            <div class="stat-val" id="dash-cash">₱100,000.00</div>
+            <div class="stat-sub">Ready to deploy</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-lbl">Current ELO</div>
+            <div class="stat-val" id="dash-elo">0</div>
+            <div class="stat-sub" id="dash-tier">Dirt 3</div>
+          </div>
+        </div>
+
+        <!-- Rank Progress -->
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">Rank Progress</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+            <div class="tier-badge tb-dirt" id="dash-tier-badge">DIRT 3</div>
+            <div style="flex:1">
+              <div class="rank-progress-bar">
+                <div class="rank-progress-fill" id="dash-progress-fill" style="width:0%;background:var(--dirt);"></div>
+              </div>
+            </div>
+            <div class="tier-badge" id="dash-next-tier-badge" style="opacity:0.4;">DIRT 2</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);" id="dash-progress-text">0 / 100 ELO to next rank</div>
+        </div>
+
+        <!-- Holdings quick view -->
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">Open Positions</div>
+          <table class="data-table">
+            <thead><tr><th>Stock</th><th>Shares</th><th>Entry</th><th>Current</th><th>P&L</th><th>P&L%</th></tr></thead>
+            <tbody id="dash-holdings"></tbody>
+          </table>
+          <div id="dash-no-holdings" style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">No open positions. Go trade something.</div>
+        </div>
+
+        <!-- KOTH Top 5 Quick View -->
+        <div class="card">
+          <div class="card-title">👑 King of the Hill — Top 5</div>
+          <div id="dash-koth"></div>
+        </div>
+      </div>
+
+      <!-- TRADE -->
+      <div class="view" id="view-trade">
+        <div class="view-title">Place a Trade</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="card">
+            <div class="card-title">Order</div>
+            <div class="trade-grid">
+              <button class="trade-side-btn buy active" id="tbtn-buy" onclick="setTradeSide('buy')">BUY</button>
+              <button class="trade-side-btn sell" id="tbtn-sell" onclick="setTradeSide('sell')">SELL</button>
+            </div>
+            <div class="trade-input-group">
+              <label>Stock Symbol</label>
+              <input type="text" id="trade-stock" placeholder="e.g. JFC, ALI, BDO" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();fetchPrice(this.value)">
+            </div>
+            <div class="trade-input-group">
+              <label>Current Price (₱)</label>
+              <input type="number" id="trade-price" placeholder="0.00" oninput="calcOrderTotal()">
+            </div>
+            <div class="trade-input-group">
+              <label>Number of Shares</label>
+              <input type="number" id="trade-shares" placeholder="0" oninput="calcOrderTotal()">
+            </div>
+            <div class="trade-input-group">
+              <label>Total Value</label>
+              <input type="text" id="trade-total" readonly placeholder="₱0.00">
+            </div>
+            <button class="trade-submit buy" id="trade-submit" onclick="openConfirm()">PLACE BUY ORDER</button>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-title">Market Price — <span id="price-sym">—</span></div>
+              <div style="font-family:'JetBrains Mono',monospace;">
+                <div style="font-size:1.6rem;font-weight:700;color:var(--white);margin-bottom:4px;" id="price-current">—</div>
+                <div style="font-size:0.75rem;" id="price-change">—</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Account Balance</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--gray);margin-bottom:6px;">Available Cash</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--green);" id="trade-cash">₱100,000.00</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--gray);margin-top:8px;" id="trade-warn"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO -->
+      <div class="view" id="view-portfolio">
+        <div class="view-title">Portfolio</div>
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-lbl">Total Value</div>
+            <div class="stat-val gold" id="port-total">₱100,000.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-lbl">Cash</div>
+            <div class="stat-val" id="port-cash">₱100,000.00</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-lbl">Total P&L</div>
+            <div class="stat-val green" id="port-pl">+₱0.00</div>
+            <div class="stat-sub green" id="port-plpct">+0.00%</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Open Positions</div>
+          <table class="data-table">
+            <thead><tr><th>Stock</th><th>Shares</th><th>Entry Price</th><th>Current Price</th><th>P&L</th><th>P&L %</th><th></th></tr></thead>
+            <tbody id="port-holdings"></tbody>
+          </table>
+          <div id="port-empty" style="text-align:center;padding:32px;color:var(--gray);font-size:0.78rem;">No open positions.</div>
+        </div>
+      </div>
+
+      <!-- LEADERBOARD -->
+      <div class="view" id="view-leaderboard">
+        <div class="view-title">👑 King of the Hill</div>
+        <div class="card" style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:2px;">TOP 10 = KOTH · UPDATED DAILY AT 3:30PM</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);" id="lb-updated">—</div>
+          </div>
+          <div style="display:grid;grid-template-columns:40px 1fr 100px 100px 80px;padding:0 16px 8px;border-bottom:1px solid var(--border);">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--gray2);letter-spacing:1px;">#</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--gray2);letter-spacing:1px;">PLAYER</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--gray2);letter-spacing:1px;text-align:right;">ELO</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--gray2);letter-spacing:1px;text-align:right;">RETURN</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--gray2);letter-spacing:1px;text-align:right;">TIER</div>
+          </div>
+          <div id="lb-list"></div>
+        </div>
+      </div>
+
+      <!-- LEAGUES -->
+      <div class="view" id="view-leagues">
+        <div class="view-title">Leagues</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+          <div class="card">
+            <div class="card-title">Create a League</div>
+            <div class="trade-input-group">
+              <label>League Name</label>
+              <input type="text" id="league-name" placeholder="UST Finance Block A">
+            </div>
+            <div class="trade-input-group">
+              <label>Password</label>
+              <input type="password" id="league-pass" placeholder="Share with your friends">
+            </div>
+            <div class="trade-input-group">
+              <label>Description (optional)</label>
+              <input type="text" id="league-desc" placeholder="Best traders in the block">
+            </div>
+            <button class="trade-submit buy" onclick="createLeague()">CREATE LEAGUE</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Join a League</div>
+            <div class="trade-input-group">
+              <label>League ID</label>
+              <input type="number" id="join-league-id" placeholder="Enter league ID">
+            </div>
+            <div class="trade-input-group">
+              <label>Password</label>
+              <input type="password" id="join-league-pass" placeholder="League password">
+            </div>
+            <button class="trade-submit buy" style="background:var(--obsidian);margin-top:32px;" onclick="joinLeague()">JOIN LEAGUE</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">My Leagues</div>
+          <div id="my-leagues"><div style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">You haven't joined any leagues yet.</div></div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="view" id="view-history">
+        <div class="view-title">Trade History</div>
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Stock</th><th>Side</th><th>Shares</th><th>Entry</th><th>Exit</th><th>Return %</th><th>Days Held</th></tr></thead>
+            <tbody id="history-body"></tbody>
+          </table>
+          <div id="history-empty" style="text-align:center;padding:32px;color:var(--gray);font-size:0.78rem;">No closed trades yet.</div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="view" id="view-profile">
+        <div class="view-title">My Profile</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="card">
+            <div class="card-title">Rank & ELO</div>
+            <div style="text-align:center;padding:20px 0;">
+              <div style="font-size:3rem;margin-bottom:8px;" id="profile-tier-icon">🟤</div>
+              <div class="tier-badge tb-dirt" id="profile-tier-badge" style="font-size:0.8rem;padding:6px 16px;">DIRT 3</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:700;color:var(--white);margin:14px 0 4px;" id="profile-elo">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);">ELO RATING</div>
+            </div>
+            <div class="rank-progress">
+              <div class="rank-progress-label">
+                <span id="profile-cur-tier">DIRT 3</span>
+                <span id="profile-progress-text">0 / 100</span>
+                <span id="profile-next-tier">DIRT 2</span>
+              </div>
+              <div class="rank-progress-bar">
+                <div class="rank-progress-fill" id="profile-progress-fill" style="width:0%;background:var(--dirt);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Stats</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
+                <span style="color:var(--gray);">Username</span><span id="profile-username" style="color:var(--white);font-weight:700;">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
+                <span style="color:var(--gray);">School</span><span id="profile-school" style="color:var(--white);">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
+                <span style="color:var(--gray);">Days Played</span><span id="profile-days" style="color:var(--white);">0</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
+                <span style="color:var(--gray);">Portfolio Value</span><span id="profile-portval" style="color:var(--gold);">₱100,000</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;">
+                <span style="color:var(--gray);">Total Return</span><span id="profile-return" style="color:var(--green);">+0.00%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px;text-align:center;padding:28px;">
+          <div class="card-title">Share Your Rank</div>
+          <canvas id="share-canvas" width="1080" height="1080"></canvas>
+          <img id="share-preview-img" style="max-width:320px;border-radius:12px;margin-bottom:16px;" alt="">
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn-primary" onclick="generateShareCard()">GENERATE SHARE CARD</button>
+            <button class="btn-secondary" onclick="downloadShareCard()" id="btn-download" style="display:none;">DOWNLOAD</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end main -->
+  </div><!-- end app-body -->
+</div><!-- end page-app -->
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const GAS_URL = '/.netlify/functions/gas';
+const STARTING_CASH = 100000;
+
+// ============================================================
+// STATE
+// ============================================================
+let currentUser = null;
+let playerData = null;
+let holdings = [];
+let trades = [];
+let leaderboard = [];
+let tradeSide = 'buy';
+let pendingOrder = null;
+
+// Tier config
+const TIERS = [
+  {name:'Dirt',sub:3,min:0,max:99,color:'var(--dirt)',icon:'🟤',cls:'tb-dirt'},
+  {name:'Dirt',sub:2,min:100,max:199,color:'var(--dirt)',icon:'🟤',cls:'tb-dirt'},
+  {name:'Dirt',sub:1,min:200,max:299,color:'var(--dirt)',icon:'🟤',cls:'tb-dirt'},
+  {name:'Bronze',sub:3,min:300,max:449,color:'var(--bronze)',icon:'🥉',cls:'tb-bronze'},
+  {name:'Bronze',sub:2,min:450,max:599,color:'var(--bronze)',icon:'🥉',cls:'tb-bronze'},
+  {name:'Bronze',sub:1,min:600,max:779,color:'var(--bronze)',icon:'🥉',cls:'tb-bronze'},
+  {name:'Silver',sub:3,min:780,max:979,color:'var(--silver)',icon:'🥈',cls:'tb-silver'},
+  {name:'Silver',sub:2,min:980,max:1179,color:'var(--silver)',icon:'🥈',cls:'tb-silver'},
+  {name:'Silver',sub:1,min:1180,max:1399,color:'var(--silver)',icon:'🥈',cls:'tb-silver'},
+  {name:'Gold',sub:3,min:1400,max:1619,color:'var(--gold)',icon:'🥇',cls:'tb-gold'},
+  {name:'Gold',sub:2,min:1620,max:1859,color:'var(--gold)',icon:'🥇',cls:'tb-gold'},
+  {name:'Gold',sub:1,min:1860,max:2119,color:'var(--gold)',icon:'🥇',cls:'tb-gold'},
+  {name:'Platinum',sub:3,min:2120,max:2319,color:'var(--platinum)',icon:'💠',cls:'tb-platinum'},
+  {name:'Platinum',sub:2,min:2320,max:2479,color:'var(--platinum)',icon:'💠',cls:'tb-platinum'},
+  {name:'Platinum',sub:1,min:2480,max:2619,color:'var(--platinum)',icon:'💠',cls:'tb-platinum'},
+  {name:'Diamond',sub:3,min:2620,max:2719,color:'var(--diamond)',icon:'💎',cls:'tb-diamond'},
+  {name:'Diamond',sub:2,min:2720,max:2819,color:'var(--diamond)',icon:'💎',cls:'tb-diamond'},
+  {name:'Diamond',sub:1,min:2820,max:2919,color:'var(--diamond)',icon:'💎',cls:'tb-diamond'},
+  {name:'Obsidian',sub:0,min:2920,max:999999,color:'var(--obsidian)',icon:'🖤',cls:'tb-obsidian'},
+];
+
+function getTier(elo) {
+  for (let i = TIERS.length - 1; i >= 0; i--) {
+    if (elo >= TIERS[i].min) return TIERS[i];
+  }
+  return TIERS[0];
+}
+
+function getTierLabel(tier) {
+  if (!tier) return 'Dirt 3';
+  return tier.sub > 0 ? `${tier.name} ${tier.sub}` : tier.name;
+}
+
+function getTierProgress(elo) {
+  const tier = getTier(elo);
+  const range = tier.max - tier.min;
+  const progress = elo - tier.min;
+  return range > 0 ? (progress / range) * 100 : 100;
+}
+
+function getNextTier(elo) {
+  const tier = getTier(elo);
+  const idx = TIERS.findIndex(t => t.name === tier.name && t.sub === tier.sub);
+  return TIERS[idx + 1] || tier;
+}
+
+// ============================================================
+// AUTH — Google OAuth
+// ============================================================
+const GOOGLE_CLIENT_ID = '501217452261-dnphdo1abncnt5nhqcukvut952h0shjf.apps.googleusercontent.com';
+let pendingGoogleToken = null;
+
+function showModal(type) { /* no-op — using Google Sign In directly */ }
+function closeModal() { /* no-op */ }
+function switchModal(type) { /* no-op */ }
+
+// Called by Google after user signs in
+async function handleGoogleSignIn(response) {
+  closeModal();
+  pendingGoogleToken = response.credential;
+
+  // Decode the JWT to get email and name
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  const email = payload.email;
+  const googleName = payload.name;
+  const googleID = payload.sub;
+
+  showToast('info', 'Verifying...', 'Checking your account.');
+
+  try {
+    // Check if player already exists
+    const res = await gasPost({ action: 'google_login', googleID, email, googleName, token: response.credential });
+
+    if (res.success && res.isNewUser) {
+      // New user — show onboarding
+      document.getElementById('onboard-email').textContent = email;
+      document.getElementById('onboard-username').value = googleName.replace(/\s+/g, '').toLowerCase();
+      document.getElementById('onboard-modal').classList.add('show');
+    } else if (res.success) {
+      // Existing user — go straight to app
+      currentUser = { email, username: res.player.Username, playerID: res.player.PlayerID, googleID };
+      localStorage.setItem('koth_user', JSON.stringify(currentUser));
+      await loadApp();
+    } else {
+      showToast('error', 'Sign In Failed', res.error || 'Please try again.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Could not connect. Try again.');
+  }
+}
+
+async function completeOnboarding() {
+  const username = document.getElementById('onboard-username').value.trim();
+  const school = document.getElementById('onboard-school').value.trim();
+  const email = document.getElementById('onboard-email').textContent;
+
+  if (!username) { showToast('error', 'Missing Username', 'Please enter a username.'); return; }
+  if (username.length < 3) { showToast('error', 'Too Short', 'Username must be at least 3 characters.'); return; }
+
+  const btn = document.getElementById('btn-onboard');
+  btn.disabled = true;
+  btn.textContent = 'SETTING UP...';
+
+  try {
+    const payload = JSON.parse(atob(pendingGoogleToken.split('.')[1]));
+    const res = await gasPost({
+      action: 'complete_registration',
+      googleID: payload.sub,
+      email,
+      username,
+      school,
+      token: pendingGoogleToken
+    });
+
+    if (res.success) {
+      currentUser = { email, username, playerID: res.player.fields.PlayerID, googleID: payload.sub };
+      localStorage.setItem('koth_user', JSON.stringify(currentUser));
+      document.getElementById('onboard-modal').classList.remove('show');
+      pendingGoogleToken = null;
+      await loadApp();
+    } else {
+      document.getElementById('err-onboard-username').textContent = res.error || 'Username taken.';
+      document.getElementById('err-onboard-username').style.display = 'block';
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Could not connect. Try again.');
+  }
+  btn.disabled = false;
+  btn.textContent = 'START TRADING';
+}
+
+function logout() {
+  localStorage.removeItem('koth_user');
+  currentUser = null;
+  playerData = null;
+  // Revoke Google session
+  if (window.google && google.accounts) {
+    google.accounts.id.disableAutoSelect();
+  }
+  document.getElementById('page-landing').style.display = 'flex';
+  document.getElementById('page-app').style.display = 'none';
+}
+
+// ============================================================
+// APP LOAD
+// ============================================================
+async function loadApp() {
+  document.getElementById('page-landing').style.display = 'none';
+  document.getElementById('page-app').style.display = 'flex';
+  document.getElementById('page-app').classList.add('active');
+
+  await Promise.all([
+    loadPlayerData(),
+    loadHoldings(),
+    loadLeaderboard()
+  ]);
+
+  renderDashboard();
+  renderTopbar();
+}
+
+async function loadPlayerData() {
+  try {
+    const res = await gasGet({ action: 'player', playerID: currentUser.playerID });
+    if (res.success) playerData = res.player;
+  } catch(e) {}
+}
+
+async function loadHoldings() {
+  try {
+    const res = await gasGet({ action: 'holdings', playerID: currentUser.playerID });
+    if (res.success) holdings = res.holdings;
+  } catch(e) {}
+}
+
+async function loadTrades() {
+  try {
+    const res = await gasGet({ action: 'trades', playerID: currentUser.playerID });
+    if (res.success) trades = res.trades;
+  } catch(e) {}
+}
+
+async function loadLeaderboard() {
+  try {
+    const res = await gasGet({ action: 'leaderboard' });
+    if (res.success) leaderboard = res.leaderboard;
+  } catch(e) {}
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderTopbar() {
+  if (!playerData) return;
+  const elo = playerData.ELO || 0;
+  const tier = getTier(elo);
+  document.getElementById('topbar-username').textContent = playerData.Username || '—';
+  document.getElementById('topbar-elo').textContent = elo + ' ELO';
+  document.getElementById('topbar-tier-icon').textContent = tier.icon;
+}
+
+function renderDashboard() {
+  if (!playerData) return;
+  const elo = playerData.ELO || 0;
+  const cash = playerData.VirtualCash || STARTING_CASH;
+  const portval = playerData.PortfolioValue || STARTING_CASH;
+  const ret = portval - STARTING_CASH;
+  const retPct = (ret / STARTING_CASH * 100).toFixed(2);
+  const tier = getTier(elo);
+  const nextTier = getNextTier(elo);
+  const progress = getTierProgress(elo);
+
+  document.getElementById('dash-portval').textContent = '₱' + portval.toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('dash-portreturn').textContent = (ret >= 0 ? '+' : '') + '₱' + Math.abs(ret).toLocaleString('en', {minimumFractionDigits:2}) + ' (' + (ret >= 0 ? '+' : '') + retPct + '%)';
+  document.getElementById('dash-portreturn').className = 'stat-sub ' + (ret >= 0 ? 'green' : 'red');
+  document.getElementById('dash-cash').textContent = '₱' + cash.toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('dash-elo').textContent = elo.toLocaleString();
+  document.getElementById('dash-tier').textContent = getTierLabel(tier);
+
+  // Progress bar
+  document.getElementById('dash-tier-badge').textContent = getTierLabel(tier);
+  document.getElementById('dash-tier-badge').className = 'tier-badge ' + tier.cls;
+  document.getElementById('dash-next-tier-badge').textContent = getTierLabel(nextTier);
+  document.getElementById('dash-next-tier-badge').className = 'tier-badge ' + nextTier.cls;
+  document.getElementById('dash-progress-fill').style.width = progress + '%';
+  document.getElementById('dash-progress-fill').style.background = tier.color;
+  const needed = nextTier.min - elo;
+  document.getElementById('dash-progress-text').textContent = (elo - tier.min) + ' / ' + (tier.max - tier.min + 1) + ' ELO — ' + (needed > 0 ? needed + ' to next rank' : 'MAX TIER REACHED');
+
+  // Holdings
+  renderHoldingsQuick();
+
+  // KOTH quick
+  renderKOTHQuick();
+}
+
+function renderHoldingsQuick() {
+  const tbody = document.getElementById('dash-holdings');
+  const empty = document.getElementById('dash-no-holdings');
+  if (holdings.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = holdings.map(h => {
+    const pl = (h.CurrentPrice - h.EntryPrice) * h.Shares;
+    const plp = h.EntryPrice > 0 ? ((h.CurrentPrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
+    const cls = pl >= 0 ? 'green' : 'red';
+    const sign = pl >= 0 ? '+' : '';
+    return `<tr>
+      <td>${h.Stock}</td>
+      <td>${(h.Shares || 0).toLocaleString()}</td>
+      <td>₱${(h.EntryPrice || 0).toFixed(2)}</td>
+      <td>₱${(h.CurrentPrice || 0).toFixed(2)}</td>
+      <td class="${cls}">${sign}₱${Math.abs(pl).toLocaleString('en',{minimumFractionDigits:2})}</td>
+      <td class="${cls}">${sign}${plp}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderKOTHQuick() {
+  const el = document.getElementById('dash-koth');
+  const top5 = leaderboard.slice(0, 5);
+  if (top5.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No players yet. Be the first.</div>';
+    return;
+  }
+  el.innerHTML = top5.map((p, i) => {
+    const tier = getTier(p.ELO || 0);
+    const isCrown = i === 0;
+    const retPct = (p.TotalReturnPct || 0).toFixed(2);
+    const retCls = p.TotalReturnPct >= 0 ? 'green' : 'red';
+    return `<div class="lb-row ${isCrown ? 'crown-row' : 'koth-row'}">
+      <div class="lb-rank ${isCrown ? 'top1' : ''}">${isCrown ? '👑' : '#' + (i+1)}</div>
+      <div class="lb-player">
+        <div class="lb-avatar">${(p.Username || '?').charAt(0).toUpperCase()}</div>
+        <div>
+          <div class="lb-username">${p.Username || '—'}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);">${p.School || 'Unknown School'}</div>
+        </div>
+      </div>
+      <div class="lb-elo">${(p.ELO || 0).toLocaleString()}</div>
+      <div class="lb-return ${retCls}">${p.TotalReturnPct >= 0 ? '+' : ''}${retPct}%</div>
+      <div class="lb-tier-badge"><span class="tier-badge ${tier.cls}">${tier.name.toUpperCase()}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderLeaderboard() {
+  const el = document.getElementById('lb-list');
+  if (leaderboard.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--gray);">No players yet.</div>';
+    return;
+  }
+  el.innerHTML = leaderboard.map((p, i) => {
+    const tier = getTier(p.ELO || 0);
+    const isCrown = i === 0;
+    const isKOTH = i < 10;
+    const retPct = (p.TotalReturnPct || 0).toFixed(2);
+    const retCls = p.TotalReturnPct >= 0 ? 'green' : 'red';
+    const kothBadge = isKOTH ? '<span class="tier-badge tb-koth" style="font-size:0.45rem;margin-left:4px;">KOTH</span>' : '';
+    const tierLabel = tier.sub > 0 ? tier.name + ' ' + tier.sub : tier.name;
+    const schoolText = p.School || 'Unknown School';
+    const username = p.Username || 'Unknown';
+    const rankLabel = isCrown ? '👑' : '#' + (i+1);
+    const rowClass = isCrown ? 'crown-row' : isKOTH ? 'koth-row' : '';
+    const rankClass = isCrown ? 'top1' : i < 3 ? 'top3' : '';
+    const elo = (p.ELO || 0).toLocaleString();
+    const retSign = p.TotalReturnPct >= 0 ? '+' : '';
+    const avatarLetter = username.charAt(0).toUpperCase();
+    return '<div class="lb-row ' + rowClass + '">' +
+      '<div class="lb-rank ' + rankClass + '">' + rankLabel + '</div>' +
+      '<div class="lb-player">' +
+        '<div class="lb-avatar">' + avatarLetter + '</div>' +
+        '<div>' +
+          '<div class="lb-username">' + username + ' ' + kothBadge + '</div>' +
+          '<div style="font-family:monospace;font-size:0.55rem;color:var(--gray);">' + schoolText + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="lb-elo">' + elo + '</div>' +
+      '<div class="lb-return ' + retCls + '">' + retSign + retPct + '%</div>' +
+      '<div class="lb-tier-badge"><span class="tier-badge ' + tier.cls + '">' + tierLabel + '</span></div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('lb-updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit',minute:'2-digit'});
+}
+
+function renderPortfolio() {
+  if (!playerData) return;
+  const cash = playerData.VirtualCash || STARTING_CASH;
+  const portval = playerData.PortfolioValue || STARTING_CASH;
+  const pl = portval - STARTING_CASH;
+  const plpct = (pl / STARTING_CASH * 100).toFixed(2);
+
+  document.getElementById('port-total').textContent = '₱' + portval.toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('port-cash').textContent = '₱' + cash.toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('port-pl').textContent = (pl >= 0 ? '+' : '') + '₱' + Math.abs(pl).toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('port-pl').className = 'stat-val ' + (pl >= 0 ? 'green' : 'red');
+  document.getElementById('port-plpct').textContent = (pl >= 0 ? '+' : '') + plpct + '%';
+  document.getElementById('port-plpct').className = 'stat-sub ' + (pl >= 0 ? 'green' : 'red');
+
+  const tbody = document.getElementById('port-holdings');
+  const empty = document.getElementById('port-empty');
+  if (holdings.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = holdings.map(h => {
+    const pl2 = (h.CurrentPrice - h.EntryPrice) * h.Shares;
+    const plp = h.EntryPrice > 0 ? ((h.CurrentPrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
+    const cls = pl2 >= 0 ? 'green' : 'red';
+    const sign = pl2 >= 0 ? '+' : '';
+    return `<tr>
+      <td>${h.Stock}</td>
+      <td>${(h.Shares||0).toLocaleString()}</td>
+      <td>₱${(h.EntryPrice||0).toFixed(4)}</td>
+      <td>₱${(h.CurrentPrice||0).toFixed(4)}</td>
+      <td class="${cls}">${sign}₱${Math.abs(pl2).toLocaleString('en',{minimumFractionDigits:2})}</td>
+      <td class="${cls}">${sign}${plp}%</td>
+      <td><button onclick="openSellModal('${h.Stock}',${h.CurrentPrice},${h.Shares})" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">SELL</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const tbody = document.getElementById('history-body');
+  const empty = document.getElementById('history-empty');
+  if (trades.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = trades.map(t => {
+    const cls = t.ReturnPct >= 0 ? 'green' : 'red';
+    const sign = t.ReturnPct >= 0 ? '+' : '';
+    return `<tr>
+      <td>${t.CloseDate || '—'}</td>
+      <td>${t.Stock}</td>
+      <td class="${t.CloseType === 'VOLUNTARY' ? (t.EntryPrice < t.ExitPrice ? 'green' : 'red') : 'gray'}">${t.CloseType === 'VOLUNTARY' ? (t.EntryPrice < t.ExitPrice ? 'SELL' : 'SELL') : 'CLOSED'}</td>
+      <td>${(t.Shares||0).toLocaleString()}</td>
+      <td>₱${(t.EntryPrice||0).toFixed(2)}</td>
+      <td>₱${(t.ExitPrice||0).toFixed(2)}</td>
+      <td class="${cls}">${sign}${(t.ReturnPct||0).toFixed(2)}%</td>
+      <td>${t.HoldingDays || 0}d</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderProfile() {
+  if (!playerData) return;
+  const elo = playerData.ELO || 0;
+  const tier = getTier(elo);
+  const nextTier = getNextTier(elo);
+  const progress = getTierProgress(elo);
+
+  document.getElementById('profile-username').textContent = playerData.Username || '—';
+  document.getElementById('profile-school').textContent = playerData.School || 'Not specified';
+  document.getElementById('profile-days').textContent = playerData.DaysPlayed || 0;
+  document.getElementById('profile-portval').textContent = '₱' + (playerData.PortfolioValue || STARTING_CASH).toLocaleString('en', {minimumFractionDigits:0});
+  document.getElementById('profile-return').textContent = (playerData.TotalReturnPct >= 0 ? '+' : '') + (playerData.TotalReturnPct || 0).toFixed(2) + '%';
+  document.getElementById('profile-return').className = playerData.TotalReturnPct >= 0 ? 'green' : 'red';
+
+  document.getElementById('profile-tier-icon').textContent = tier.icon;
+  document.getElementById('profile-tier-badge').textContent = getTierLabel(tier);
+  document.getElementById('profile-tier-badge').className = 'tier-badge ' + tier.cls;
+  document.getElementById('profile-elo').textContent = elo.toLocaleString();
+
+  document.getElementById('profile-cur-tier').textContent = getTierLabel(tier);
+  document.getElementById('profile-next-tier').textContent = getTierLabel(nextTier);
+  document.getElementById('profile-progress-text').textContent = (elo - tier.min) + ' / ' + (tier.max - tier.min + 1);
+  document.getElementById('profile-progress-fill').style.width = progress + '%';
+  document.getElementById('profile-progress-fill').style.background = tier.color;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navTo(view) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('nav-' + view)?.classList.add('active');
+  document.getElementById('view-' + view)?.classList.add('active');
+
+  if (view === 'leaderboard') renderLeaderboard();
+  if (view === 'portfolio') renderPortfolio();
+  if (view === 'history') { loadTrades().then(renderHistory); }
+  if (view === 'profile') renderProfile();
+}
+
+// ============================================================
+// TRADING
+// ============================================================
+function setTradeSide(side) {
+  tradeSide = side;
+  document.getElementById('tbtn-buy').className = 'trade-side-btn buy' + (side === 'buy' ? ' active' : '');
+  document.getElementById('tbtn-sell').className = 'trade-side-btn sell' + (side === 'sell' ? ' active' : '');
+  document.getElementById('trade-submit').className = 'trade-submit ' + side;
+  document.getElementById('trade-submit').textContent = 'PLACE ' + side.toUpperCase() + ' ORDER';
+}
+
+function calcOrderTotal() {
+  const price = parseFloat(document.getElementById('trade-price').value) || 0;
+  const shares = parseFloat(document.getElementById('trade-shares').value) || 0;
+  const total = price * shares;
+  document.getElementById('trade-total').value = '₱ ' + total.toLocaleString('en', {minimumFractionDigits:2});
+  const cash = playerData?.VirtualCash || STARTING_CASH;
+  if (tradeSide === 'buy' && total > cash) {
+    document.getElementById('trade-warn').textContent = '⚠ Insufficient cash. Available: ₱' + cash.toLocaleString('en', {minimumFractionDigits:2});
+    document.getElementById('trade-warn').style.color = 'var(--red)';
+  } else {
+    document.getElementById('trade-warn').textContent = '';
+  }
+}
+
+async function fetchPrice(sym) {
+  if (!sym || sym.length < 2) return;
+  document.getElementById('price-sym').textContent = sym;
+  // Use TradingView for live price display
+  // We use a simple approach — show the symbol and let them input price
+  document.getElementById('price-current').textContent = 'Live via TradingView';
+  document.getElementById('price-change').textContent = 'Enter price manually or check TradingView';
+  document.getElementById('price-change').style.color = 'var(--gray)';
+}
+
+function openSellModal(stock, price, shares) {
+  navTo('trade');
+  setTradeSide('sell');
+  document.getElementById('trade-stock').value = stock;
+  document.getElementById('trade-price').value = price.toFixed(2);
+  document.getElementById('trade-shares').value = shares;
+  calcOrderTotal();
+  document.getElementById('price-sym').textContent = stock;
+  document.getElementById('price-current').textContent = '₱' + price.toFixed(2);
+}
+
+function openConfirm() {
+  const stock = document.getElementById('trade-stock').value.trim().toUpperCase();
+  const price = parseFloat(document.getElementById('trade-price').value);
+  const shares = parseInt(document.getElementById('trade-shares').value);
+  const total = price * shares;
+
+  if (!stock || !price || !shares) { showToast('error', 'Incomplete Order', 'Fill in all fields.'); return; }
+  if (isNaN(price) || price <= 0) { showToast('error', 'Invalid Price', 'Enter a valid price.'); return; }
+  if (isNaN(shares) || shares <= 0) { showToast('error', 'Invalid Shares', 'Enter valid number of shares.'); return; }
+
+  const cash = playerData?.VirtualCash || STARTING_CASH;
+  if (tradeSide === 'buy' && total > cash) {
+    showToast('error', 'Insufficient Cash', 'You don\'t have enough virtual cash.');
+    return;
+  }
+
+  pendingOrder = { stock, side: tradeSide, price, shares, total };
+
+  document.getElementById('cf-stock').textContent = stock + '.PSE';
+  document.getElementById('cf-side').textContent = tradeSide.toUpperCase();
+  document.getElementById('cf-side').style.color = tradeSide === 'buy' ? 'var(--green)' : 'var(--red)';
+  document.getElementById('cf-shares').textContent = shares.toLocaleString();
+  document.getElementById('cf-price').textContent = '₱' + price.toFixed(2);
+  document.getElementById('cf-total').textContent = '₱' + total.toLocaleString('en', {minimumFractionDigits:2});
+
+  document.getElementById('confirm-modal').classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-modal').classList.remove('show');
+  pendingOrder = null;
+}
+
+async function executeOrder() {
+  if (!pendingOrder) return;
+  closeConfirm();
+
+  const o = pendingOrder;
+  const action = o.side === 'buy' ? 'buy' : 'sell';
+
+  try {
+    const res = await gasPost({
+      action,
+      playerID: currentUser.playerID,
+      stock: o.stock,
+      price: o.price,
+      shares: o.shares
+    });
+
+    if (res.success) {
+      showToast('success', 'Order Executed', res.message);
+      // Update local cash
+      if (playerData) {
+        if (o.side === 'buy') {
+          playerData.VirtualCash -= o.total;
+        } else {
+          playerData.VirtualCash += o.total;
+        }
+      }
+      await loadHoldings();
+      renderDashboard();
+      renderTopbar();
+      document.getElementById('trade-cash').textContent = '₱' + (playerData?.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
+    } else {
+      showToast('error', 'Order Failed', res.error || 'Could not execute order.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Connection failed. Try again.');
+  }
+  pendingOrder = null;
+}
+
+// ============================================================
+// LEAGUES
+// ============================================================
+async function createLeague() {
+  const name = document.getElementById('league-name').value.trim();
+  const pass = document.getElementById('league-pass').value;
+  const desc = document.getElementById('league-desc').value.trim();
+
+  if (!name || !pass) { showToast('error', 'Missing Fields', 'Enter league name and password.'); return; }
+
+  try {
+    const res = await gasPost({ action: 'create_league', playerID: currentUser.playerID, name, password: pass, description: desc });
+    if (res.success) {
+      showToast('success', 'League Created', `League "${name}" created. Share the ID: ${res.league.fields?.LeagueID}`);
+      document.getElementById('league-name').value = '';
+      document.getElementById('league-pass').value = '';
+      document.getElementById('league-desc').value = '';
+    } else {
+      showToast('error', 'Failed', res.error || 'Could not create league.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Connection failed.');
+  }
+}
+
+async function joinLeague() {ent.getElementById('join-league-id').value;
+  const pass = document.getElementById('join-league-pass').value;
+
+  if (!id || !pass) { showToast('error', 'Missing Fields', 'Enter league ID and password.'); return; }
+
+  try {
+    const res = await gasPost({ action: 'join_league', playerID: currentUser.playerID, leagueID: parseInt(id), password: pass });
+    if (res.success) {
+      showToast('success', 'Joined!', 'You are now in the league. Good luck.');
+      document.getElementById('join-league-id').value = '';
+      document.getElementById('join-league-pass').value = '';
+    } else {
+      showToast('error', 'Failed', res.error || 'Wrong ID or password.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Connection failed.');
+  }
+}
+
+// ============================================================
+// SHARE CARD GENERATOR
+// ============================================================
+function generateShareCard() {
+  if (!playerData) return;
+  const canvas = document.getElementById('share-canvas');
+  const ctx = canvas.getContext('2d');
+  const w = 1080, h = 1080;
+  canvas.width = w;
+  canvas.height = h;
+
+  const elo = playerData.ELO || 0;
+  const tier = getTier(elo);
+  const portval = playerData.PortfolioValue || STARTING_CASH;
+  const ret = ((portval - STARTING_CASH) / STARTING_CASH * 100).toFixed(2);
+
+  const tierColors = {
+    Dirt:'#8B6914', Bronze:'#cd7f32', Silver:'#c0c0c0',
+    Gold:'#ffd700', Platinum:'#60efff', Diamond:'#a8d8ea', Obsidian:'#9b59b6'
+  };
+  const tierColor = tierColors[tier.name] || '#ffffff';
+
+  ctx.fillStyle = '#060608';
+  ctx.fillRect(0, 0, w, h);
+
+  const grad = ctx.createRadialGradient(w/2, 0, 0, w/2, 0, h);
+  grad.addColorStop(0, tierColor + '22');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = tierColor + '44';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(20, 20, w-40, h-40);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 52px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('KING OF THE HILL', w/2, 120);
+
+  ctx.strokeStyle = tierColor + '66';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(200, 148);
+  ctx.lineTo(880, 148);
+  ctx.stroke();
+
+  ctx.font = '120px Arial';
+  ctx.fillText(tier.icon, w/2, 340);
+
+  ctx.fillStyle = tierColor;
+  ctx.font = 'bold 72px Arial';
+  ctx.fillText(getTierLabel(tier).toUpperCase(), w/2, 430);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 48px Arial';
+  ctx.fillText(elo.toLocaleString() + ' ELO', w/2, 510);
+
+  ctx.fillStyle = tierColor;
+  ctx.font = 'bold 56px Arial';
+  ctx.fillText('@' + (playerData.Username || 'player'), w/2, 620);
+
+  if (playerData.School) {
+    ctx.fillStyle = '#6a6a80';
+    ctx.font = '32px Arial';
+    ctx.fillText(playerData.School, w/2, 670);
+  }
+
+  ctx.strokeStyle = '#1e1e2a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(200, 710);
+  ctx.lineTo(880, 710);
+  ctx.stroke();
+
+  ctx.fillStyle = '#6a6a80';
+  ctx.font = '28px Arial';
+  ctx.fillText('PORTFOLIO VALUE', w/2 - 200, 760);
+  ctx.fillText('TOTAL RETURN', w/2 + 200, 760);
+
+  ctx.fillStyle = '#ffd700';
+  ctx.font = 'bold 40px Arial';
+  ctx.fillText('P' + portval.toLocaleString('en', {maximumFractionDigits:0}), w/2 - 200, 810);
+
+  ctx.fillStyle = parseFloat(ret) >= 0 ? '#00c853' : '#ff1744';
+  ctx.font = 'bold 40px Arial';
+  ctx.fillText((parseFloat(ret) >= 0 ? '+' : '') + ret + '%', w/2 + 200, 810);
+
+  ctx.fillStyle = '#3a3a50';
+  ctx.font = '24px Arial';
+  ctx.fillText('Powered by BRUB AI x Unicapital Securities', w/2, 980);
+
+  const img = document.getElementById('share-preview-img');
+  img.src = canvas.toDataURL('image/png');
+  img.style.display = 'block';
+  document.getElementById('btn-download').style.display = 'inline-flex';
+  showToast('success', 'Share Card Ready', 'Download it and post on your socials!');
+}
+
+function downloadShareCard() {
+  const canvas = document.getElementById('share-canvas');
+  const link = document.createElement('a');
+  link.download = 'koth-rank-' + (playerData ? playerData.Username : 'player') + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+// ============================================================
+// GAS API
+// ============================================================
+async function gasPost(data) {
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+async function gasGet(params) {
+  const query = Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
+  const res = await fetch(GAS_URL + '?' + query);
+  return res.json();
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(type, title, body) {
+  const el = document.getElementById('toast');
+  document.getElementById('toast-title').textContent = title;
+  document.getElementById('toast-body').textContent = body;
+  el.className = 'toast show ' + type;
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', async () => {
+  const saved = localStorage.getItem('koth_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      await loadApp();
+      return;
+    } catch(e) {}
+  }
+  try {
+    const lb = await gasGet({ action: 'leaderboard' });
+    if (lb.success && lb.leaderboard.length > 0) {
+      document.getElementById('stat-king') && (document.getElementById('stat-king').textContent = lb.leaderboard[0].Username || 'Unknown');
+    }
+  } catch(e) {}
+  document.getElementById('trade-cash').textContent = 'P' + STARTING_CASH.toLocaleString('en', {minimumFractionDigits:2});
+});
+
+setTradeSide('buy');
+</script>
+</body>
+</html>
