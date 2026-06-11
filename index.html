@@ -1542,7 +1542,8 @@ async function createLeague() {
   }
 }
 
-async function joinLeague() {ent.getElementById('join-league-id').value;
+async function joinLeague() {
+  const id = document.getElementById('join-league-id').value;
   const pass = document.getElementById('join-league-pass').value;
 
   if (!id || !pass) { showToast('error', 'Missing Fields', 'Enter league ID and password.'); return; }
