@@ -564,6 +564,10 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 .obsidian-glow{box-shadow:0 0 20px rgba(155,89,182,0.3);}
 .koth-glow{box-shadow:0 0 20px rgba(255,107,53,0.3);}
 .crown-glow{box-shadow:0 0 20px rgba(255,215,0,0.3);}
+/* SCHOOL DROPDOWN */
+.school-option{padding:10px 14px;font-size:0.82rem;color:var(--white);cursor:pointer;border-bottom:1px solid var(--border);}
+.school-option:hover{background:var(--bg3);}
+.school-option:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
@@ -617,7 +621,10 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
     </div>
     <div class="form-group">
       <label>School (optional)</label>
-      <input type="text" id="onboard-school" placeholder="UST, DLSU, UP, Ateneo...">
+      <div style="position:relative;">
+        <input type="text" id="onboard-school" placeholder="Type your school name..." autocomplete="off" oninput="filterSchools(this.value)" onfocus="filterSchools(this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:12px 14px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.88rem;outline:none;">
+        <div id="school-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;max-height:200px;overflow-y:auto;z-index:999;margin-top:4px;"></div>
+      </div>
     </div>
     <div style="font-size:0.68rem;color:var(--gray);margin-bottom:16px;line-height:1.6;">
       Signed in as <span id="onboard-email" style="color:var(--green);"></span>
@@ -1542,8 +1549,7 @@ async function createLeague() {
   }
 }
 
-async function joinLeague() {
-  const id = document.getElementById('join-league-id').value;
+async function joinLeague() {ent.getElementById('join-league-id').value;
   const pass = document.getElementById('join-league-pass').value;
 
   if (!id || !pass) { showToast('error', 'Missing Fields', 'Enter league ID and password.'); return; }
@@ -1721,6 +1727,162 @@ window.addEventListener('load', async () => {
 });
 
 setTradeSide('buy');
+
+// ============================================================
+// PHILIPPINE SCHOOLS AUTOCOMPLETE
+// ============================================================
+const PH_SCHOOLS = [
+  // NCR
+  'University of Santo Tomas (UST)',
+  'De La Salle University (DLSU)',
+  'Ateneo de Manila University (ADMU)',
+  'University of the Philippines Diliman (UPD)',
+  'University of the Philippines Manila (UPM)',
+  'Far Eastern University (FEU)',
+  'University of the East (UE)',
+  'Mapua University',
+  'Polytechnic University of the Philippines (PUP)',
+  'Philippine Normal University (PNU)',
+  'National University Philippines (NU)',
+  'Adamson University',
+  'San Beda University',
+  'Letran College',
+  'Lyceum of the Philippines University',
+  'Centro Escolar University (CEU)',
+  'Manuel L. Quezon University (MLQU)',
+  'University of Manila',
+  'Pamantasan ng Lungsod ng Maynila (PLM)',
+  'Jose Rizal University (JRU)',
+  'Philippine School of Business Administration (PSBA)',
+  'Arellano University',
+  'Colegio de San Juan de Letran',
+  'Philippine Christian University (PCU)',
+  'San Sebastian College',
+  'La Consolacion College Manila',
+  'Miriam College',
+  'Assumption College',
+  'College of the Holy Spirit Manila',
+  'Our Lady of Fatima University',
+  'AMA Computer University',
+  'STI College',
+  'Asia Pacific College',
+  'De La Salle Araneta University',
+  'Rizal Technological University (RTU)',
+  'Technological University of the Philippines (TUP)',
+  'Philippine Womens University (PWU)',
+  'Emilio Aguinaldo College',
+  'Manila Central University',
+  // Luzon
+  'University of the Philippines Los Baños (UPLB)',
+  'De La Salle Lipa',
+  'Batangas State University (BatStateU)',
+  'Laguna State Polytechnic University (LSPU)',
+  'Cavite State University (CavSU)',
+  'Bulacan State University (BulSU)',
+  'Pampanga State Agricultural University (PSAU)',
+  'Holy Angel University (HAU)',
+  'University of the Assumption (UA)',
+  'Don Bosco Technical College',
+  'Angeles University Foundation (AUF)',
+  'University of Perpetual Help System DALTA',
+  'Tarlac State University (TSU)',
+  'Pangasinan State University (PSU)',
+  'University of Northern Philippines (UNP)',
+  'Saint Louis University (SLU) Baguio',
+  'University of the Cordilleras (UC)',
+  'Benguet State University (BSU)',
+  'Baguio Central University',
+  'Nueva Vizcaya State University (NVSU)',
+  'Cagayan State University (CSU)',
+  'University of Cagayan Valley',
+  'University of Saint Louis Tuguegarao',
+  'Isabela State University (ISU)',
+  'Bicol University',
+  'Ateneo de Naga University',
+  'Camarines Sur Polytechnic Colleges (CSPC)',
+  'University of Nueva Caceres',
+  'Partido State University',
+  // Visayas
+  'University of San Carlos (USC)',
+  'Cebu Institute of Technology University (CIT-U)',
+  'University of Cebu (UC)',
+  'Southwestern University PHINMA',
+  'University of the Visayas (UV)',
+  'Cebu Normal University (CNU)',
+  'Cebu Technological University (CTU)',
+  'University of San Jose Recoletos (USJ-R)',
+  'Sacred Heart School Ateneo de Cebu',
+  'De La Salle University Dasmariñas',
+  'West Visayas State University (WVSU)',
+  'University of the Philippines Visayas (UPV)',
+  'Central Philippine University (CPU)',
+  'University of Iloilo PHINMA',
+  'Iloilo Science and Technology University (ISAT-U)',
+  'Ateneo de Iloilo',
+  'University of St. La Salle Bacolod',
+  'Carlos Hilado Memorial State University (CHMSU)',
+  'Silliman University',
+  'Leyte Normal University (LNU)',
+  'Eastern Visayas State University (EVSU)',
+  'University of Eastern Philippines (UEP)',
+  'Naval State University (NSU)',
+  'Samar State University (SSU)',
+  // Mindanao
+  'University of Mindanao (UM)',
+  'Ateneo de Davao University (ADDU)',
+  'University of the Philippines Mindanao (UPMin)',
+  'Davao Medical School Foundation (DMSF)',
+  'Holy Cross of Davao College',
+  'San Pedro College Davao',
+  'Mindanao State University (MSU) Marawi',
+  'Mindanao State University Iligan Institute of Technology (MSU-IIT)',
+  'Mindanao State University General Santos (MSU GenSan)',
+  'Mindanao State University Tawi-Tawi (MSU Tawi-Tawi)',
+  'Notre Dame University Cotabato',
+  'Notre Dame of Marbel University',
+  'Sultan Kudarat State University (SKSU)',
+  'Cotabato City State Polytechnic College (CCSPC)',
+  'Bukidnon State University (BukSU)',
+  'Xavier University Cagayan de Oro (XU)',
+  'Liceo de Cagayan University',
+  'Capitol University Cagayan de Oro',
+  'Mindanao State University Naawan',
+  'Central Mindanao University (CMU)',
+  'University of Southern Mindanao (USM)',
+  'Western Mindanao State University (WMSU)',
+  'Zamboanga State College of Marine Sciences and Technology (ZSCMST)',
+  'Jose Rizal Memorial State University (JRMSU)',
+  'Surigao del Sur State University (SDSSU)',
+  'Agusan del Sur State College of Agriculture and Technology (ASSCAT)',
+  'Caraga State University (CSU)',
+  'University of Southeastern Philippines (USEP)',
+  'Southern Philippines Agri Business and Marine and Aquatic School of Technology (SPAMAST)',
+];
+
+function filterSchools(val) {
+  const dropdown = document.getElementById('school-dropdown');
+  if (!val || val.length < 2) { dropdown.style.display = 'none'; return; }
+  const q = val.toLowerCase();
+  const matches = PH_SCHOOLS.filter(s => s.toLowerCase().includes(q)).slice(0, 8);
+  if (matches.length === 0) { dropdown.style.display = 'none'; return; }
+  dropdown.innerHTML = matches.map(s =>
+    '<div class="school-option" onclick="selectSchool(\'' + s.replace(/'/g,"\'") + '\')">' + s + '</div>'
+  ).join('');
+  dropdown.style.display = 'block';
+}
+
+function selectSchool(name) {
+  document.getElementById('onboard-school').value = name;
+  document.getElementById('school-dropdown').style.display = 'none';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#onboard-school') && !e.target.closest('#school-dropdown')) {
+    const dd = document.getElementById('school-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
 </script>
 </body>
 </html>
