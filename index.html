@@ -487,10 +487,10 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 .lb-rank.top3{color:var(--bronze);}
 .lb-player{display:flex;align-items:center;gap:10px;}
 .lb-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--gray);border:1px solid var(--border2);}
-.lb-username{font-size:0.8rem;font-weight:600;color:var(--white);}
+.lb-username{font-size:0.95rem;font-weight:700;color:var(--white);}
 .lb-badges{display:flex;gap:4px;margin-top:2px;}
-.lb-elo{font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;color:var(--white);text-align:right;}
-.lb-return{font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-align:right;}
+.lb-elo{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--white);text-align:right;}
+.lb-return{font-family:'JetBrains Mono',monospace;font-size:0.82rem;text-align:right;}
 .lb-tier-badge{text-align:right;}
 
 /* ── TIER BADGES ── */
@@ -764,10 +764,13 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
           <div id="dash-no-holdings" style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">No open positions. Go trade something.</div>
         </div>
 
-        <!-- KOTH Top 5 Quick View -->
-        <div class="card">
-          <div class="card-title">👑 King of the Hill — Top 5</div>
-          <div id="dash-koth"></div>
+        <!-- KOTH Top 3 Grand Display -->
+        <div class="card" style="background:linear-gradient(135deg,#0a0a0a 0%,#1a1a0a 100%);border:1px solid #333;">
+          <div style="text-align:center;padding:8px 0 20px;">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--crown);">👑 KING OF THE HILL</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);letter-spacing:2px;">TOP 3 TRADERS · UPDATED DAILY 3:30PM</div>
+          </div>
+          <div id="dash-koth" style="display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;padding:0 8px 16px;"></div>
         </div>
       </div>
 
@@ -1260,30 +1263,39 @@ function renderHoldingsQuick() {
 
 function renderKOTHQuick() {
   const el = document.getElementById('dash-koth');
-  const top5 = [...leaderboard].sort((a, b) => (b.ELO || 0) - (a.ELO || 0)).slice(0, 5);
-  if (top5.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No players yet. Be the first.</div>';
+  const top3 = [...leaderboard].sort((a, b) => (b.ELO || 0) - (a.ELO || 0)).slice(0, 3);
+  if (top3.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;grid-column:1/-1;">No players yet. Be the first.</div>';
     return;
   }
-  el.innerHTML = top5.map((p, i) => {
+
+  const medals = ['🥇', '🥈', '🥉'];
+  const medalColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+  const sizes = [1, 1.15, 1]; // middle is bigger
+  const order = top3.length >= 2 ? [1, 0, 2] : [0]; // silver, gold, bronze order visually
+
+  const cards = order.map(idx => {
+    if (!top3[idx]) return '<div></div>';
+    const p = top3[idx];
     const tier = getTier(p.ELO || 0);
-    const isCrown = i === 0;
     const retPct = (p.TotalReturnPct || 0).toFixed(2);
-    const retCls = p.TotalReturnPct >= 0 ? 'green' : 'red';
-    return `<div class="lb-row ${isCrown ? 'crown-row' : 'koth-row'}">
-      <div class="lb-rank ${isCrown ? 'top1' : ''}">${isCrown ? '👑' : '#' + (i+1)}</div>
-      <div class="lb-player">
-        <div class="lb-avatar">${(p.Username || '?').charAt(0).toUpperCase()}</div>
-        <div>
-          <div class="lb-username">${p.Username || '—'}</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);">${p.School || 'Unknown School'}</div>
-        </div>
-      </div>
-      <div class="lb-elo">${(p.ELO || 0).toLocaleString()}</div>
-      <div class="lb-return ${retCls}">${p.TotalReturnPct >= 0 ? '+' : ''}${retPct}%</div>
-      <div class="lb-tier-badge"><span class="tier-badge ${tier.cls}">${tier.name.toUpperCase()}</span></div>
+    const retCls = p.TotalReturnPct >= 0 ? '#00e676' : '#ff1744';
+    const medal = medals[idx];
+    const color = medalColors[idx];
+    const isGold = idx === 0;
+    return `<div style="text-align:center;padding:${isGold ? '24px 12px' : '12px'};background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid ${color}33;position:relative;">
+      <div style="font-size:${isGold ? '2.2rem' : '1.6rem'};margin-bottom:8px;">${medal}</div>
+      <div style="width:${isGold ? '52px' : '40px'};height:${isGold ? '52px' : '40px'};border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:${isGold ? '1.2rem' : '0.9rem'};font-weight:700;color:${color};">${(p.Username||'?').charAt(0).toUpperCase()}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:${isGold ? '1.1rem' : '0.9rem'};color:#fff;letter-spacing:1px;margin-bottom:2px;">${p.Username||'—'}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);margin-bottom:8px;">${p.School||''}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:${isGold ? '1.8rem' : '1.4rem'};color:${color};line-height:1;">${(p.ELO||0).toLocaleString()}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);margin-bottom:6px;">ELO</div>
+      <span class="tier-badge ${tier.cls}" style="font-size:0.6rem;">${tier.sub > 0 ? tier.name + ' ' + tier.sub : tier.name}</span>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:${retCls};margin-top:6px;">${p.TotalReturnPct >= 0 ? '+' : ''}${retPct}%</div>
     </div>`;
-  }).join('');
+  });
+
+  el.innerHTML = cards.join('');
 }
 
 function renderLeaderboard() {
@@ -1507,11 +1519,10 @@ function closeConfirm() {
 async function executeOrder() {
   if (!pendingOrder) return;
   closeConfirm();
-
   const o = pendingOrder;
   const action = o.side === 'buy' ? 'buy' : 'sell';
-
   try {
+    showToast('info', 'Processing...', 'Executing your order.');
     const res = await gasPost({
       action,
       playerID: currentUser.playerID,
@@ -1519,29 +1530,25 @@ async function executeOrder() {
       price: o.price,
       shares: o.shares
     });
-
+    console.log('Order response:', JSON.stringify(res));
     if (res.success) {
-      showToast('success', 'Order Executed', res.message);
-      // Update local cash
-      if (playerData) {
-        if (o.side === 'buy') {
-          playerData.VirtualCash -= o.total;
-        } else {
-          playerData.VirtualCash += o.total;
-        }
-      }
+      showToast('success', 'Order Executed! ✅', res.message || (o.side.toUpperCase() + ' ' + o.shares + ' ' + o.stock + ' @ ₱' + o.price));
+      await loadPlayerData();
       await loadHoldings();
       renderDashboard();
       renderTopbar();
       document.getElementById('trade-cash').textContent = '₱' + (playerData?.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
     } else {
       showToast('error', 'Order Failed', res.error || 'Could not execute order.');
+      console.error('Order failed:', JSON.stringify(res));
     }
   } catch(e) {
     showToast('error', 'Error', 'Connection failed. Try again.');
+    console.error('Order error:', e);
   }
   pendingOrder = null;
 }
+
 
 // ============================================================
 // LEAGUES
@@ -1732,17 +1739,25 @@ window.addEventListener('load', async () => {
   if (saved) {
     try {
       currentUser = JSON.parse(saved);
+      // Verify player still exists in DB
+      const verify = await gasGet({ action: 'player', playerID: currentUser.playerID });
+      if (verify.success) {
+        await loadApp();
+        return;
+      } else {
+        // Player not found, clear session
+        localStorage.removeItem('koth_user');
+      }
+    } catch(e) {
+      // Network error — still load app with cached user, dont logout
+      currentUser = JSON.parse(saved);
       await loadApp();
       return;
-    } catch(e) {}
-  }
-  try {
-    const lb = await gasGet({ action: 'leaderboard' });
-    if (lb.success && lb.leaderboard.length > 0) {
-      document.getElementById('stat-king') && (document.getElementById('stat-king').textContent = lb.leaderboard[0].Username || 'Unknown');
     }
-  } catch(e) {}
-  document.getElementById('trade-cash').textContent = 'P' + STARTING_CASH.toLocaleString('en', {minimumFractionDigits:2});
+  }
+  // Show landing
+  document.getElementById('page-landing').style.display = 'flex';
+  document.getElementById('trade-cash').textContent = '₱' + STARTING_CASH.toLocaleString('en', {minimumFractionDigits:2});
 });
 
 // ============================================================
