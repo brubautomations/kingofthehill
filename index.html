@@ -1755,20 +1755,10 @@ window.addEventListener('load', async () => {
   if (saved) {
     try {
       currentUser = JSON.parse(saved);
-      // Verify player still exists in DB
-      const verify = await gasGet({ action: 'player', playerID: currentUser.playerID });
-      if (verify.success) {
-        await loadApp();
-        return;
-      } else {
-        // Player not found, clear session
-        localStorage.removeItem('koth_user');
-      }
-    } catch(e) {
-      // Network error — still load app with cached user, dont logout
-      currentUser = JSON.parse(saved);
       await loadApp();
       return;
+    } catch(e) {
+      console.log('Session load error:', e);
     }
   }
   // Show landing
