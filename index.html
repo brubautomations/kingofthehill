@@ -1465,11 +1465,27 @@ function calcOrderTotal() {
 async function fetchPrice(sym) {
   if (!sym || sym.length < 2) return;
   document.getElementById('price-sym').textContent = sym;
-  // Use TradingView for live price display
-  // We use a simple approach — show the symbol and let them input price
-  document.getElementById('price-current').textContent = 'Live via TradingView';
-  document.getElementById('price-change').textContent = 'Enter price manually or check TradingView';
-  document.getElementById('price-change').style.color = 'var(--gray)';
+  document.getElementById('price-current').textContent = 'Loading...';
+  try {
+    const res = await gasGet({ action: 'get_price', symbol: sym });
+    if (res.success && res.price) {
+      const price = res.price;
+      const change = res.changePct || 0;
+      document.getElementById('price-current').textContent = '₱' + price.toFixed(2);
+      document.getElementById('price-change').textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '% today';
+      document.getElementById('price-change').style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
+      // Auto-fill price field
+      document.getElementById('trade-price').value = price.toFixed(2);
+      calcOrderTotal();
+    } else {
+      document.getElementById('price-current').textContent = 'Not found';
+      document.getElementById('price-change').textContent = 'Check symbol and try again';
+      document.getElementById('price-change').style.color = 'var(--gray)';
+    }
+  } catch(e) {
+    document.getElementById('price-current').textContent = 'Error';
+    document.getElementById('price-change').style.color = 'var(--gray)';
+  }
 }
 
 function openSellModal(stock, price, shares) {
@@ -1518,8 +1534,8 @@ function closeConfirm() {
 
 async function executeOrder() {
   if (!pendingOrder) return;
+  const o = {...pendingOrder}; // copy before closing
   closeConfirm();
-  const o = pendingOrder;
   const action = o.side === 'buy' ? 'buy' : 'sell';
   try {
     showToast('info', 'Processing...', 'Executing your order.');
