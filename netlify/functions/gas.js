@@ -1,5 +1,5 @@
 exports.handler = async (event) => {
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWHg__LSQ_8zv7i_dAq2sx7EnbFC292_AXwQW4LVsNXsVRA-VqQ__Ag2xRpgWCeFI/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhorkwE2IZcbfiEEntftB7FqjlhAbkzZD1ww84ZT9-hHpPHEDoGIjtmyKIIIOvvH6A/exec';
 
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
