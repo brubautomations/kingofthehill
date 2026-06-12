@@ -488,6 +488,14 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 .lb-player{display:flex;align-items:center;gap:10px;}
 .lb-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;color:var(--gray);border:1px solid var(--border2);}
 .lb-username{font-size:0.95rem;font-weight:700;color:var(--white);}
+.lb-row.koth-row .lb-username{color:var(--koth);text-shadow:0 0 8px rgba(0,200,83,0.4);}
+.lb-row.crown-row .lb-username{color:var(--crown);text-shadow:0 0 12px rgba(255,215,0,0.6);}
+.lb-row.top2-row .lb-username{color:var(--silver);text-shadow:0 0 8px rgba(192,192,192,0.4);}
+.lb-row.top3-row .lb-username{color:var(--bronze);text-shadow:0 0 8px rgba(205,127,50,0.4);}
+.lb-row.crown-row{background:linear-gradient(90deg,rgba(255,215,0,0.08) 0%,transparent 100%);border-left:3px solid var(--crown);animation:crownPulse 2s ease-in-out infinite;}
+.lb-row.top2-row{background:linear-gradient(90deg,rgba(192,192,192,0.06) 0%,transparent 100%);border-left:3px solid var(--silver);}
+.lb-row.top3-row{background:linear-gradient(90deg,rgba(205,127,50,0.06) 0%,transparent 100%);border-left:3px solid var(--bronze);}
+@keyframes crownPulse{0%,100%{box-shadow:inset 0 0 0 0 rgba(255,215,0,0.1)}50%{box-shadow:inset 0 0 20px 0 rgba(255,215,0,0.08)}}
 .lb-badges{display:flex;gap:4px;margin-top:2px;}
 .lb-elo{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--white);text-align:right;}
 .lb-return{font-family:'JetBrains Mono',monospace;font-size:0.82rem;text-align:right;}
@@ -648,7 +656,7 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 <!-- ══ CONFIRM MODAL ══ -->
 <div class="modal-overlay" id="confirm-modal">
   <div class="confirm-modal">
-    <div class="confirm-title">⚡ Confirm Order</div>
+    <div class="confirm-title">Confirm Order</div>
     <div class="confirm-row"><span class="lbl">STOCK</span><span class="val" id="cf-stock"></span></div>
     <div class="confirm-row"><span class="lbl">SIDE</span><span class="val" id="cf-side"></span></div>
     <div class="confirm-row"><span class="lbl">SHARES</span><span class="val" id="cf-shares"></span></div>
@@ -691,27 +699,27 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
     <div class="sidebar">
       <div class="nav-section">Trading</div>
       <div class="nav-item active" id="nav-dashboard" onclick="navTo('dashboard')">
-        <span class="nav-icon">◈</span> Dashboard
+        <span class="nav-icon"></span> Dashboard
       </div>
       <div class="nav-item" id="nav-trade" onclick="navTo('trade')">
-        <span class="nav-icon">⇅</span> Trade
+        <span class="nav-icon"></span> Trade
       </div>
       <div class="nav-item" id="nav-portfolio" onclick="navTo('portfolio')">
-        <span class="nav-icon">◉</span> Portfolio
+        <span class="nav-icon"></span> Portfolio
       </div>
       <div class="nav-section">Competition</div>
       <div class="nav-item" id="nav-leaderboard" onclick="navTo('leaderboard')">
-        <span class="nav-icon">👑</span> Leaderboard
+        <span class="nav-icon"></span> Leaderboard
       </div>
       <div class="nav-item" id="nav-leagues" onclick="navTo('leagues')">
-        <span class="nav-icon">⊞</span> Leagues
+        <span class="nav-icon"></span> Leagues
       </div>
       <div class="nav-section">Account</div>
       <div class="nav-item" id="nav-history" onclick="navTo('history')">
-        <span class="nav-icon">≡</span> Trade History
+        <span class="nav-icon"></span> Trade History
       </div>
       <div class="nav-item" id="nav-profile" onclick="navTo('profile')">
-        <span class="nav-icon">◇</span> My Profile
+        <span class="nav-icon"></span> My Profile
       </div>
     </div>
 
@@ -767,7 +775,7 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
         <!-- KOTH Top 3 Grand Display -->
         <div class="card" style="background:linear-gradient(135deg,#0a0a0a 0%,#1a1a0a 100%);border:1px solid #333;">
           <div style="text-align:center;padding:8px 0 20px;">
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--crown);">👑 KING OF THE HILL</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--crown);">KING OF THE HILL</div>
             <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);letter-spacing:2px;">TOP 3 TRADERS · UPDATED DAILY 3:30PM</div>
           </div>
           <div id="dash-koth" style="display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;padding:0 8px 16px;"></div>
@@ -850,7 +858,7 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 
       <!-- LEADERBOARD -->
       <div class="view" id="view-leaderboard">
-        <div class="view-title">👑 King of the Hill</div>
+        <div class="view-title">King of the Hill</div>
         <div class="card" style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:2px;">TOP 10 = KOTH · UPDATED DAILY AT 3:30PM</div>
@@ -909,12 +917,32 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
       <!-- HISTORY -->
       <div class="view" id="view-history">
         <div class="view-title">Trade History</div>
-        <div class="card">
+        <!-- PENDING ORDERS -->
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">PENDING ORDERS — Executes at Next Market Open</div>
           <table class="data-table">
-            <thead><tr><th>Date</th><th>Stock</th><th>Side</th><th>Shares</th><th>Entry</th><th>Exit</th><th>Return %</th><th>Days Held</th></tr></thead>
+            <thead><tr><th>Stock</th><th>Shares</th><th>Order Price</th><th>Total</th><th>Date Queued</th><th></th></tr></thead>
+            <tbody id="pending-body"></tbody>
+          </table>
+          <div id="pending-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No pending orders.</div>
+        </div>
+        <!-- OPEN POSITIONS -->
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">OPEN POSITIONS</div>
+          <table class="data-table">
+            <thead><tr><th>Stock</th><th>Shares</th><th>Entry Price</th><th>Current Price</th><th>P&L</th><th>P&L %</th><th></th></tr></thead>
+            <tbody id="open-body"></tbody>
+          </table>
+          <div id="open-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No open positions.</div>
+        </div>
+        <!-- CLOSED TRADES -->
+        <div class="card">
+          <div class="card-title">CLOSED TRADES</div>
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Stock</th><th>Shares</th><th>Entry</th><th>Exit</th><th>Return %</th><th>Days Held</th></tr></thead>
             <tbody id="history-body"></tbody>
           </table>
-          <div id="history-empty" style="text-align:center;padding:32px;color:var(--gray);font-size:0.78rem;">No closed trades yet.</div>
+          <div id="history-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No closed trades yet.</div>
         </div>
       </div>
 
@@ -997,6 +1025,7 @@ let trades = [];
 let leaderboard = [];
 let tradeSide = 'buy';
 let pendingOrder = null;
+let allHoldings = [];
 
 // Tier config
 const TIERS = [
@@ -1177,8 +1206,12 @@ async function loadHoldings() {
 
 async function loadTrades() {
   try {
-    const res = await gasGet({ action: 'trades', playerID: currentUser.playerID });
-    if (res.success) trades = res.trades;
+    const [tradesRes, holdingsRes] = await Promise.all([
+      gasGet({ action: 'trades', playerID: currentUser.playerID }),
+      gasGet({ action: 'holdings_all', playerID: currentUser.playerID })
+    ]);
+    if (tradesRes.success) trades = tradesRes.trades;
+    if (holdingsRes.success) allHoldings = holdingsRes.holdings;
   } catch(e) {}
 }
 
@@ -1317,7 +1350,7 @@ function renderLeaderboard() {
     const schoolText = p.School || 'Unknown School';
     const username = p.Username || 'Unknown';
     const rankLabel = isCrown ? '👑' : '#' + (i+1);
-    const rowClass = isCrown ? 'crown-row' : isKOTH ? 'koth-row' : '';
+    const rowClass = isCrown ? 'crown-row' : i === 1 ? 'top2-row' : i === 2 ? 'top3-row' : isKOTH ? 'koth-row' : '';
     const rankClass = isCrown ? 'top1' : i < 3 ? 'top3' : '';
     const elo = (p.ELO || 0).toLocaleString();
     const retSign = p.TotalReturnPct >= 0 ? '+' : '';
@@ -1376,24 +1409,76 @@ function renderPortfolio() {
 }
 
 function renderHistory() {
+  // PENDING orders
+  const pending = allHoldings.filter(h => h.Status === 'PENDING');
+  const pendingBody = document.getElementById('pending-body');
+  const pendingEmpty = document.getElementById('pending-empty');
+  if (pending.length === 0) {
+    pendingBody.innerHTML = '';
+    pendingEmpty.style.display = 'block';
+  } else {
+    pendingEmpty.style.display = 'none';
+    pendingBody.innerHTML = pending.map(h => {
+      const total = (h.EntryPrice || 0) * (h.Shares || 0);
+      return `<tr>
+        <td style="color:var(--gold);font-weight:700;">${h.Stock}</td>
+        <td>${(h.Shares||0).toLocaleString()}</td>
+        <td>₱${(h.EntryPrice||0).toFixed(2)}</td>
+        <td>₱${total.toLocaleString('en',{minimumFractionDigits:2})}</td>
+        <td>${h.EntryDate || '—'}</td>
+        <td><button onclick="cancelPendingOrder('${h.id || ''}')" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;">CANCEL</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // OPEN positions
+  const open = allHoldings.filter(h => h.Status === 'OPEN');
+  const openBody = document.getElementById('open-body');
+  const openEmpty = document.getElementById('open-empty');
+  if (open.length === 0) {
+    openBody.innerHTML = '';
+    openEmpty.style.display = 'block';
+  } else {
+    openEmpty.style.display = 'none';
+    openBody.innerHTML = open.map(h => {
+      const pl = (h.CurrentPrice - h.EntryPrice) * h.Shares;
+      const plp = h.EntryPrice > 0 ? ((h.CurrentPrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
+      const cls = pl >= 0 ? 'green' : 'red';
+      const sign = pl >= 0 ? '+' : '';
+      return `<tr>
+        <td style="color:var(--green);font-weight:700;">${h.Stock}</td>
+        <td>${(h.Shares||0).toLocaleString()}</td>
+        <td>₱${(h.EntryPrice||0).toFixed(2)}</td>
+        <td>₱${(h.CurrentPrice||0).toFixed(2)}</td>
+        <td class="${cls}">${sign}₱${Math.abs(pl).toLocaleString('en',{minimumFractionDigits:2})}</td>
+        <td class="${cls}">${sign}${plp}%</td>
+        <td><button onclick="openSellModal('${h.Stock}',${h.CurrentPrice},${h.Shares})" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;">SELL</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // CLOSED trades
   const tbody = document.getElementById('history-body');
   const empty = document.getElementById('history-empty');
-  if (trades.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  tbody.innerHTML = trades.map(t => {
-    const cls = t.ReturnPct >= 0 ? 'green' : 'red';
-    const sign = t.ReturnPct >= 0 ? '+' : '';
-    return `<tr>
-      <td>${t.CloseDate || '—'}</td>
-      <td>${t.Stock}</td>
-      <td class="${t.CloseType === 'VOLUNTARY' ? (t.EntryPrice < t.ExitPrice ? 'green' : 'red') : 'gray'}">${t.CloseType === 'VOLUNTARY' ? (t.EntryPrice < t.ExitPrice ? 'SELL' : 'SELL') : 'CLOSED'}</td>
-      <td>${(t.Shares||0).toLocaleString()}</td>
-      <td>₱${(t.EntryPrice||0).toFixed(2)}</td>
-      <td>₱${(t.ExitPrice||0).toFixed(2)}</td>
-      <td class="${cls}">${sign}${(t.ReturnPct||0).toFixed(2)}%</td>
-      <td>${t.HoldingDays || 0}d</td>
-    </tr>`;
-  }).join('');
+  if (trades.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = trades.map(t => {
+      const cls = t.ReturnPct >= 0 ? 'green' : 'red';
+      const sign = t.ReturnPct >= 0 ? '+' : '';
+      return `<tr>
+        <td>${t.CloseDate || '—'}</td>
+        <td>${t.Stock}</td>
+        <td>${(t.Shares||0).toLocaleString()}</td>
+        <td>₱${(t.EntryPrice||0).toFixed(2)}</td>
+        <td>₱${(t.ExitPrice||0).toFixed(2)}</td>
+        <td class="${cls}">${sign}${(t.ReturnPct||0).toFixed(2)}%</td>
+        <td>${t.HoldingDays || 0}d</td>
+      </tr>`;
+    }).join('');
+  }
 }
 
 function renderProfile() {
@@ -1798,6 +1883,25 @@ async function reportUsername(username) {
       showToast('success', 'Reported', 'Username "' + username + '" has been flagged for review.');
     } else {
       showToast('error', 'Failed', res.error || 'Could not submit report.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Connection failed.');
+  }
+}
+
+async function cancelPendingOrder(holdingRecordId) {
+  if (!confirm('Cancel this pending order? Your cash will be refunded.')) return;
+  try {
+    const res = await gasPost({ action: 'cancel_order', playerID: currentUser.playerID, holdingId: holdingRecordId });
+    if (res.success) {
+      showToast('success', 'Order Cancelled', 'Cash has been refunded.');
+      await loadPlayerData();
+      await loadTrades();
+      renderHistory();
+      renderTopbar();
+      renderDashboard();
+    } else {
+      showToast('error', 'Failed', res.error || 'Could not cancel order.');
     }
   } catch(e) {
     showToast('error', 'Error', 'Connection failed.');
