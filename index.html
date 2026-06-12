@@ -19,6 +19,18 @@
   --gray: #6a6a80;
   --gray2: #3a3a50;
 
+body.light-mode {
+  --bg: #f5f5f5;
+  --bg2: #ffffff;
+  --bg3: #eeeeee;
+  --card: #ffffff;
+  --border: #e0e0e0;
+  --border2: #cccccc;
+  --white: #111111;
+  --gray: #555555;
+  --gray2: #888888;
+}
+
   /* Tier colors */
   --dirt: #8B6914;
   --bronze: #cd7f32;
@@ -668,6 +680,7 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
           <div class="rank-elo" id="topbar-elo">— ELO</div>
         </div>
       </div>
+      <button class="topbar-btn" onclick="toggleTheme()" id="theme-toggle" title="Toggle light/dark mode">🌙</button>
       <button class="topbar-btn logout" onclick="logout()">SIGN OUT</button>
     </div>
   </div>
@@ -930,6 +943,9 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
             <div style="display:flex;flex-direction:column;gap:10px;">
               <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
                 <span style="color:var(--gray);">Username</span><span id="profile-username" style="color:var(--white);font-weight:700;">—</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray2);padding:6px 0;border-bottom:1px solid var(--border);line-height:1.6;">
+                Username cannot be changed. For serious concerns email <a href="mailto:hello@brubai.net" style="color:var(--koth);">hello@brubai.net</a>
               </div>
               <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
                 <span style="color:var(--gray);">School</span><span id="profile-school" style="color:var(--white);">—</span>
@@ -1292,12 +1308,13 @@ function renderLeaderboard() {
     const elo = (p.ELO || 0).toLocaleString();
     const retSign = p.TotalReturnPct >= 0 ? '+' : '';
     const avatarLetter = username.charAt(0).toUpperCase();
+    const reportBtn = p.IsBot ? '' : '<button onclick="reportUser(\"' + username + '\"' + ')" style="background:none;border:none;color:var(--gray2);cursor:pointer;font-size:0.7rem;" title="Report">🚩</button>';
     return '<div class="lb-row ' + rowClass + '">' +
       '<div class="lb-rank ' + rankClass + '">' + rankLabel + '</div>' +
       '<div class="lb-player">' +
         '<div class="lb-avatar">' + avatarLetter + '</div>' +
         '<div>' +
-          '<div class="lb-username">' + username + ' ' + kothBadge + '</div>' +
+          '<div class="lb-username">' + username + ' ' + kothBadge + ' ' + reportBtn + '</div>' +
           '<div style="font-family:monospace;font-size:0.55rem;color:var(--gray);">' + schoolText + '</div>' +
         '</div>' +
       '</div>' +
@@ -1725,6 +1742,44 @@ window.addEventListener('load', async () => {
   } catch(e) {}
   document.getElementById('trade-cash').textContent = 'P' + STARTING_CASH.toLocaleString('en', {minimumFractionDigits:2});
 });
+
+// ============================================================
+// THEME TOGGLE
+// ============================================================
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('koth_theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌙';
+}
+
+// Apply saved theme on load
+(function() {
+  const saved = localStorage.getItem('koth_theme');
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    const btn = document.getElementById('theme-toggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+
+// ============================================================
+// REPORT USERNAME
+// ============================================================
+async function reportUser(username) { return reportUsername(username); }
+async function reportUsername(username) {
+  if (!currentUser) return;
+  if (!confirm('Report "' + username + '" as offensive or inappropriate?')) return;
+  try {
+    const res = await gasPost({ action: 'report_username', username, reportedBy: currentUser.playerID });
+    if (res.success) {
+      showToast('success', 'Reported', 'Username "' + username + '" has been flagged for review.');
+    } else {
+      showToast('error', 'Failed', res.error || 'Could not submit report.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Connection failed.');
+  }
+}
 
 setTradeSide('buy');
 
