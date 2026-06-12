@@ -413,6 +413,7 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 .main {
   overflow-y:auto;
   background:var(--bg);
+  padding-bottom:36px;
 }
 .view{display:none;padding:24px;}
 .view.active{display:block;}
@@ -588,6 +589,39 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 .school-option{padding:10px 14px;font-size:0.82rem;color:var(--white);cursor:pointer;border-bottom:1px solid var(--border);}
 .school-option:hover{background:var(--bg3);}
 .school-option:last-child{border-bottom:none;}
+
+/* PSE TICKER TAPE */
+.ticker-wrap{width:100%;background:#000;border-bottom:1px solid var(--border);overflow:hidden;height:32px;display:flex;align-items:center;}
+.ticker-move{display:flex;animation:tickerScroll 60s linear infinite;white-space:nowrap;}
+.ticker-move:hover{animation-play-state:paused;}
+.ticker-item{font-family:'JetBrains Mono',monospace;font-size:0.62rem;padding:0 24px;display:flex;align-items:center;gap:8px;border-right:1px solid #222;}
+.ticker-sym{color:#fff;font-weight:700;letter-spacing:1px;}
+.ticker-price{color:#aaa;}
+.ticker-change.up{color:var(--green);}
+.ticker-change.down{color:var(--red);}
+@keyframes tickerScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* NEWS TICKER */
+.news-ticker{width:100%;background:var(--bg2);border-top:1px solid var(--border);height:30px;display:flex;align-items:center;overflow:hidden;position:fixed;bottom:0;left:0;z-index:50;}
+.news-label{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--koth);letter-spacing:2px;padding:0 14px;white-space:nowrap;border-right:1px solid var(--border2);}
+.news-move{display:flex;animation:newsScroll 120s linear infinite;white-space:nowrap;}
+.news-move:hover{animation-play-state:paused;}
+.news-item{font-size:0.7rem;color:var(--gray);padding:0 32px;cursor:pointer;}
+.news-item:hover{color:var(--white);}
+@keyframes newsScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* SVG TIER BADGES */
+.tier-badge-svg{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:0.52rem;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:4px;}
+
+/* AD SPACES */
+.ad-banner{background:linear-gradient(135deg,#0a0a1a,#12122a);border:1px solid var(--border2);border-radius:8px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.ad-logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--white);}
+.ad-tagline{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:1px;}
+.ad-cta{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--koth);border:1px solid var(--koth);padding:4px 12px;border-radius:4px;cursor:pointer;text-decoration:none;}
+
+/* STATUS MESSAGE */
+.status-bubble{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:3px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
+.status-bubble:hover{border-color:var(--koth);color:var(--white);}
 </style>
 </head>
 <body>
@@ -693,6 +727,12 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
     </div>
   </div>
 
+  <!-- PSE TICKER TAPE -->
+  <div class="ticker-wrap">
+    <div class="ticker-move" id="pse-ticker">
+      <div class="ticker-item"><span class="ticker-sym">PSEi</span><span class="ticker-price">—</span><span class="ticker-change">—</span></div>
+    </div>
+  </div>
   <!-- APP BODY -->
   <div class="app-body">
     <!-- SIDEBAR -->
@@ -729,6 +769,14 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
       <!-- DASHBOARD -->
       <div class="view active" id="view-dashboard">
         <div class="view-title">Dashboard</div>
+        <!-- UNICAPITAL AD BANNER -->
+        <div class="ad-banner">
+          <div>
+            <div class="ad-logo">Unicapital Securities</div>
+            <div class="ad-tagline">YOUR TRUSTED PSE BROKER · OPEN A REAL ACCOUNT TODAY</div>
+          </div>
+          <a href="https://www.unicapital.com.ph" target="_blank" class="ad-cta">OPEN ACCOUNT</a>
+        </div>
         <div class="stats-row">
           <div class="stat-card">
             <div class="stat-lbl">Portfolio Value</div>
@@ -926,15 +974,7 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
           </table>
           <div id="pending-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No pending orders.</div>
         </div>
-        <!-- OPEN POSITIONS -->
-        <div class="card" style="margin-bottom:14px;">
-          <div class="card-title">OPEN POSITIONS</div>
-          <table class="data-table">
-            <thead><tr><th>Stock</th><th>Shares</th><th>Entry Price</th><th>Current Price</th><th>P&L</th><th>P&L %</th><th></th></tr></thead>
-            <tbody id="open-body"></tbody>
-          </table>
-          <div id="open-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No open positions.</div>
-        </div>
+
         <!-- CLOSED TRADES -->
         <div class="card">
           <div class="card-title">CLOSED TRADES</div>
@@ -980,6 +1020,14 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
               </div>
               <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
                 <span style="color:var(--gray);">School</span><span id="profile-school" style="color:var(--white);">—</span>
+              </div>
+              <div style="padding:8px 0;border-bottom:1px solid var(--border);">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--gray);letter-spacing:2px;margin-bottom:6px;">TRASH TALK (max 60 chars)</div>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" id="status-input" maxlength="60" placeholder="come get me suckers..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.72rem;outline:none;">
+                  <button onclick="saveStatusMessage()" style="background:var(--koth);color:#000;border:none;border-radius:6px;padding:6px 14px;font-family:'Inter',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;">SAVE</button>
+                </div>
+                <div id="status-current" style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);margin-top:4px;"></div>
               </div>
               <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:0.72rem;padding:8px 0;border-bottom:1px solid var(--border);">
                 <span style="color:var(--gray);">Days Played</span><span id="profile-days" style="color:var(--white);">0</span>
@@ -1049,6 +1097,15 @@ const TIERS = [
   {name:'Diamond',sub:1,min:2820,max:2919,color:'var(--diamond)',icon:'💎',cls:'tb-diamond'},
   {name:'Obsidian',sub:0,min:2920,max:999999,color:'var(--obsidian)',icon:'🖤',cls:'tb-obsidian'},
 ];
+
+function getTierBadgeHTML(tier, label) {
+  const icons = {
+    Dirt: '⬛', Bronze: '🥉', Silver: '🥈', Gold: '🥇',
+    Platinum: '💠', Diamond: '💎', Obsidian: '🖤'
+  };
+  const icon = icons[tier.name] || '';
+  return `<span class="tier-badge ${tier.cls}" style="display:inline-flex;align-items:center;gap:3px;">${icon} ${label}</span>`;
+}
 
 function getTier(elo) {
   for (let i = TIERS.length - 1; i >= 0; i--) {
@@ -1185,6 +1242,8 @@ async function loadApp() {
     loadHoldings(),
     loadLeaderboard()
   ]);
+  loadTicker();
+  loadNewsTicker();
 
   renderDashboard();
   renderTopbar();
@@ -1363,11 +1422,12 @@ function renderLeaderboard() {
         '<div>' +
           '<div class="lb-username">' + username + ' ' + kothBadge + ' ' + reportBtn + '</div>' +
           '<div style="font-family:monospace;font-size:0.55rem;color:var(--gray);">' + schoolText + '</div>' +
+          (p.StatusMessage ? '<div class="status-bubble" title="' + p.StatusMessage + '">' + p.StatusMessage + '</div>' : '') +
         '</div>' +
       '</div>' +
       '<div class="lb-elo">' + elo + '</div>' +
       '<div class="lb-return ' + retCls + '">' + retSign + retPct + '%</div>' +
-      '<div class="lb-tier-badge"><span class="tier-badge ' + tier.cls + '">' + tierLabel + '</span></div>' +
+      '<div class="lb-tier-badge">' + getTierBadgeHTML(tier, tierLabel) + '</div>' +
     '</div>';
   }).join('');
   document.getElementById('lb-updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit',minute:'2-digit'});
@@ -1431,32 +1491,6 @@ function renderHistory() {
     }).join('');
   }
 
-  // OPEN positions
-  const open = allHoldings.filter(h => h.Status === 'OPEN');
-  const openBody = document.getElementById('open-body');
-  const openEmpty = document.getElementById('open-empty');
-  if (open.length === 0) {
-    openBody.innerHTML = '';
-    openEmpty.style.display = 'block';
-  } else {
-    openEmpty.style.display = 'none';
-    openBody.innerHTML = open.map(h => {
-      const pl = (h.CurrentPrice - h.EntryPrice) * h.Shares;
-      const plp = h.EntryPrice > 0 ? ((h.CurrentPrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
-      const cls = pl >= 0 ? 'green' : 'red';
-      const sign = pl >= 0 ? '+' : '';
-      return `<tr>
-        <td style="color:var(--green);font-weight:700;">${h.Stock}</td>
-        <td>${(h.Shares||0).toLocaleString()}</td>
-        <td>₱${(h.EntryPrice||0).toFixed(2)}</td>
-        <td>₱${(h.CurrentPrice||0).toFixed(2)}</td>
-        <td class="${cls}">${sign}₱${Math.abs(pl).toLocaleString('en',{minimumFractionDigits:2})}</td>
-        <td class="${cls}">${sign}${plp}%</td>
-        <td><button onclick="openSellModal('${h.Stock}',${h.CurrentPrice},${h.Shares})" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;">SELL</button></td>
-      </tr>`;
-    }).join('');
-  }
-
   // CLOSED trades
   const tbody = document.getElementById('history-body');
   const empty = document.getElementById('history-empty');
@@ -1489,6 +1523,10 @@ function renderProfile() {
   const progress = getTierProgress(elo);
 
   document.getElementById('profile-username').textContent = playerData.Username || '—';
+  if (playerData.StatusMessage) {
+    document.getElementById('status-input').value = playerData.StatusMessage;
+    document.getElementById('status-current').textContent = 'Current: ' + playerData.StatusMessage;
+  }
   document.getElementById('profile-school').textContent = playerData.School || 'Not specified';
   document.getElementById('profile-days').textContent = playerData.DaysPlayed || 0;
   document.getElementById('profile-portval').textContent = '₱' + (playerData.PortfolioValue || STARTING_CASH).toLocaleString('en', {minimumFractionDigits:0});
@@ -1852,6 +1890,74 @@ window.addEventListener('load', async () => {
 });
 
 // ============================================================
+// PSE TICKER TAPE
+// ============================================================
+async function loadTicker() {
+  try {
+    const stocks = ['JFC','ALI','SM','BDO','PLDT','MER','BPI','ICT','SMPH','GLO','MBT','AEV','URC','MEG','CNPF','DITO','GMA7','BLOOM','RLC','PGOLD'];
+    let items = '';
+    for (const sym of stocks) {
+      const res = await gasGet({ action: 'get_price', symbol: sym });
+      if (res.success) {
+        const cls = res.changePct >= 0 ? 'up' : 'down';
+        const sign = res.changePct >= 0 ? '+' : '';
+        items += `<div class="ticker-item">
+          <span class="ticker-sym">${sym}</span>
+          <span class="ticker-price">₱${res.price.toFixed(2)}</span>
+          <span class="ticker-change ${cls}">${sign}${res.changePct.toFixed(2)}%</span>
+        </div>`;
+      }
+    }
+    if (items) {
+      // Double for seamless loop
+      document.getElementById('pse-ticker').innerHTML = items + items;
+    }
+  } catch(e) {}
+}
+
+// ============================================================
+// NEWS TICKER
+// ============================================================
+const PSE_NEWS = [
+  'PSE Trading Championship — King of the Hill is live! Register now.',
+  'Top traders updated daily at 3:30PM. Check the leaderboard.',
+  'Beat the index daily to climb the ranks. Can you reach Obsidian?',
+  'KOTH — the only stock market game built on real PSE data.',
+  'Trade JFC, ALI, SM, BDO and 46 other PSE stocks.',
+  'New season resets every semester. Start fresh, climb again.',
+  'Powered by BRUB AI x Unicapital Securities.',
+];
+
+function loadNewsTicker() {
+  const el = document.getElementById('news-ticker-content');
+  const bar = document.getElementById('news-ticker-bar');
+  if (!el || !bar) return;
+  const items = PSE_NEWS.map(n => `<span class="news-item">${n}</span>`).join('');
+  el.innerHTML = items + items; // double for seamless loop
+  bar.style.display = 'flex';
+}
+
+// ============================================================
+// STATUS MESSAGE
+// ============================================================
+async function saveStatusMessage() {
+  const msg = document.getElementById('status-input').value.trim();
+  if (!msg) return;
+  try {
+    const res = await gasPost({ action: 'update_status', playerID: currentUser.playerID, statusMessage: msg });
+    if (res.success) {
+      showToast('success', 'Status Updated', '"' + msg + '"');
+      document.getElementById('status-current').textContent = 'Current: ' + msg;
+      if (playerData) playerData.StatusMessage = msg;
+    } else {
+      showToast('error', 'Failed', res.error || 'Could not update status.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Connection failed.');
+  }
+}
+
+// ============================================================
 // THEME TOGGLE
 // ============================================================
 function toggleTheme() {
@@ -2066,5 +2172,10 @@ document.addEventListener('click', function(e) {
   }
 });
 </script>
+  <!-- NEWS TICKER -->
+  <div class="news-ticker" id="news-ticker-bar" style="display:none;">
+    <div class="news-label">PSE NEWS</div>
+    <div class="news-move" id="news-ticker-content"></div>
+  </div>
 </body>
 </html>
