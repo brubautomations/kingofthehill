@@ -1260,7 +1260,7 @@ function renderHoldingsQuick() {
 
 function renderKOTHQuick() {
   const el = document.getElementById('dash-koth');
-  const top5 = leaderboard.slice(0, 5);
+  const top5 = [...leaderboard].sort((a, b) => (b.ELO || 0) - (a.ELO || 0)).slice(0, 5);
   if (top5.length === 0) {
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No players yet. Be the first.</div>';
     return;
@@ -1292,7 +1292,9 @@ function renderLeaderboard() {
     el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--gray);">No players yet.</div>';
     return;
   }
-  el.innerHTML = leaderboard.map((p, i) => {
+  // Sort by ELO descending
+  const sorted = [...leaderboard].sort((a, b) => (b.ELO || 0) - (a.ELO || 0));
+  el.innerHTML = sorted.map((p, i) => {
     const tier = getTier(p.ELO || 0);
     const isCrown = i === 0;
     const isKOTH = i < 10;
