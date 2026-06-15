@@ -2017,12 +2017,16 @@ async function loadTradeFeed() {
       return;
     }
     el.innerHTML = res.trades.map(t => {
+      const isBuy = t.CloseType === 'BUY';
       const ret = (t.ReturnPct || 0).toFixed(2);
-      const cls = t.ReturnPct >= 0 ? 'green' : 'red';
+      const retCls = t.ReturnPct >= 0 ? 'green' : 'red';
       const sign = t.ReturnPct >= 0 ? '+' : '';
+      const action = isBuy
+        ? `<span style="color:var(--green);font-weight:700;">BOUGHT</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} @ ₱${(t.EntryPrice||0).toFixed(2)}`
+        : `<span style="color:var(--red);font-weight:700;">SOLD</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
       return `<div class="trade-feed-item">
         <div class="trade-feed-player">${t.Username || 'Unknown'}</div>
-        <div class="trade-feed-detail">SOLD ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${cls}">${sign}${ret}%</span></div>
+        <div class="trade-feed-detail">${action}</div>
         <div class="trade-feed-detail">${t.CloseDate || '—'}</div>
       </div>`;
     }).join('');
