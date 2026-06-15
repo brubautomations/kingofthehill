@@ -1390,8 +1390,12 @@ async function loadPlayerData() {
 
 async function loadHoldings() {
   try {
-    const res = await gasGet({ action: 'holdings', playerID: currentUser.playerID });
-    if (res.success) holdings = res.holdings;
+    const [openRes, allRes] = await Promise.all([
+      gasGet({ action: 'holdings', playerID: currentUser.playerID }),
+      gasGet({ action: 'holdings_all', playerID: currentUser.playerID })
+    ]);
+    if (openRes.success) holdings = openRes.holdings;
+    if (allRes.success) allHoldings = allRes.holdings;
   } catch(e) {}
 }
 
@@ -1463,9 +1467,24 @@ function renderDashboard() {
 async function renderHoldingsQuick() {
   const tbody = document.getElementById('dash-holdings');
   const empty = document.getElementById('dash-no-holdings');
+
+  // Pending orders reserve cash but aren't open positions — count them at cost so the total stays whole
+  const pendingValue = (allHoldings || [])
+    .filter(h => h.Status === 'PENDING')
+    .reduce((sum, h) => sum + (h.EntryPrice || 0) * (h.Shares || 0), 0);
+
+  const updatePortDisplay = (total) => {
+    const ret = total - 100000;
+    const retPct = (ret / 100000 * 100).toFixed(2);
+    document.getElementById('dash-portval').textContent = '₱' + total.toLocaleString('en', {minimumFractionDigits:2});
+    document.getElementById('dash-portreturn').textContent = (ret >= 0 ? '+' : '') + '₱' + Math.abs(ret).toLocaleString('en',{minimumFractionDigits:2}) + ' (' + (ret >= 0 ? '+' : '') + retPct + '%)';
+    document.getElementById('dash-portreturn').className = 'stat-sub ' + (ret >= 0 ? 'green' : 'red');
+  };
+
   if (holdings.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = 'block';
+    updatePortDisplay((playerData?.VirtualCash || 0) + pendingValue);
     return;
   }
   empty.style.display = 'none';
@@ -1498,12 +1517,8 @@ async function renderHoldingsQuick() {
     </tr>`;
   }).join('');
 
-  // Update portfolio value display with live calculation
-  const ret = totalPortValue - 100000;
-  const retPct = (ret / 100000 * 100).toFixed(2);
-  document.getElementById('dash-portval').textContent = '₱' + totalPortValue.toLocaleString('en', {minimumFractionDigits:2});
-  document.getElementById('dash-portreturn').textContent = (ret >= 0 ? '+' : '') + '₱' + Math.abs(ret).toLocaleString('en',{minimumFractionDigits:2}) + ' (' + (ret >= 0 ? '+' : '') + retPct + '%)';
-  document.getElementById('dash-portreturn').className = 'stat-sub ' + (ret >= 0 ? 'green' : 'red');
+  // Live total = cash + open holdings (live) + pending orders (reserved cost)
+  updatePortDisplay(totalPortValue + pendingValue);
 }
 
 function renderKOTHQuick() {
@@ -1605,13 +1620,16 @@ async function renderPortfolio() {
     } catch(e) {}
   }));
 
-  // Live total value = cash + market value of holdings
+  // Live total value = cash + market value of open holdings + pending orders (reserved cost)
   let holdingsValue = 0;
   holdings.forEach(h => {
     const lp = livePrices[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
     holdingsValue += lp * (h.Shares || 0);
   });
-  const portval = cash + holdingsValue;
+  const pendingValue = (allHoldings || [])
+    .filter(h => h.Status === 'PENDING')
+    .reduce((sum, h) => sum + (h.EntryPrice || 0) * (h.Shares || 0), 0);
+  const portval = cash + holdingsValue + pendingValue;
   const pl = portval - STARTING_CASH;
   const plpct = (pl / STARTING_CASH * 100).toFixed(2);
 
