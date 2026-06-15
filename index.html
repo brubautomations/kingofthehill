@@ -84,18 +84,22 @@ body{
    LANDING PAGE
 ══════════════════════════════════════════ */
 #page-landing {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
+  display:block;
   min-height:100vh;
   position:relative;
   overflow:hidden;
-  padding:40px 20px;
 }
-#page-landing > *:not(video):not(.landing-bg) {
-  position:relative;
-  z-index:1;
+.landing-bg-img {
+  position:absolute; inset:-40px; z-index:0;
+  background:url('assets/bg.jpg') center/cover no-repeat;
+  will-change:transform;
+  transition:transform 0.25s ease-out;
+}
+.landing-scrim {
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(8,12,19,0) 0%, rgba(8,12,19,0.35) 60%, rgba(8,12,19,0.82) 100%),
+    linear-gradient(to bottom, rgba(8,12,19,0.55) 0%, rgba(8,12,19,0.05) 28%, rgba(8,12,19,0.2) 65%, rgba(8,12,19,0.92) 100%);
 }
 
 .landing-bg {
@@ -734,43 +738,171 @@ body{
 .close-receipt-head .cr-x{background:none;border:none;color:var(--gray);cursor:pointer;font-size:0.9rem;font-family:'Inter',sans-serif;}
 .close-receipt-head .cr-x:hover{color:var(--white);}
 @media(max-width:520px){.close-receipt{right:12px;left:12px;width:auto;}}
+/* ══════════ INTERACTIVE LANDING ══════════ */
+@keyframes lpFadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+@keyframes lpFadeIn { from { opacity:0; } to { opacity:1; } }
+@keyframes lpGlowPulse {
+  0%,100% { box-shadow:0 0 22px rgba(0,230,118,0.35), inset 0 0 0 1px rgba(0,230,118,0.5); }
+  50%     { box-shadow:0 0 40px rgba(0,230,118,0.65), inset 0 0 0 1px rgba(0,230,118,0.9); }
+}
+@keyframes lpDotPulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+.lp-topbar {
+  position:absolute; top:0; left:0; right:0; z-index:4;
+  display:flex; justify-content:space-between; align-items:flex-start;
+  padding:26px 34px; animation:lpFadeIn 0.8s ease both;
+}
+.lp-brand { display:flex; align-items:center; gap:12px; }
+.lp-logo { height:34px; width:auto; }
+.lp-eyebrow { font-family:'JetBrains Mono',monospace; font-size:0.62rem; letter-spacing:3px; color:var(--green); text-transform:uppercase; }
+.lp-season { text-align:right; }
+.lp-season-label { font-family:'JetBrains Mono',monospace; font-size:0.55rem; letter-spacing:2px; color:var(--gray); }
+.lp-season-time { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:1px; color:var(--gold); line-height:1.1; }
+
+.lp-panel {
+  position:absolute; top:50%; transform:translateY(-50%); z-index:3;
+  width:268px; padding:18px 18px 20px;
+  background:rgba(10,15,24,0.55); backdrop-filter:blur(10px);
+  border:1px solid var(--border2); border-radius:14px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.5);
+}
+.lp-left  { left:38px;  animation:lpFadeUp 0.9s 0.15s ease both; }
+.lp-right { right:38px; animation:lpFadeUp 0.9s 0.3s ease both; }
+.lp-panel-label { font-family:'JetBrains Mono',monospace; font-size:0.56rem; letter-spacing:2px; color:var(--gray); text-transform:uppercase; margin:6px 0 10px; }
+.lp-psei { border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px; }
+.lp-psei-val { font-family:'Bebas Neue',sans-serif; font-size:2.1rem; color:var(--white); line-height:1; }
+.lp-psei-chg { font-family:'JetBrains Mono',monospace; font-size:0.72rem; margin-top:2px; }
+.lp-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:6px 0; font-family:'JetBrains Mono',monospace; font-size:0.72rem; border-bottom:1px solid rgba(255,255,255,0.04); }
+.lp-row:last-child { border-bottom:none; }
+.lp-row .sym { color:var(--white); font-weight:700; }
+.lp-row .px { color:var(--gray); margin-left:auto; margin-right:10px; }
+.lp-row .chg.up { color:var(--green); } .lp-row .chg.down { color:var(--red); }
+.lp-lrow { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.lp-lrow:last-child { border-bottom:none; }
+.lp-lrank { font-family:'Bebas Neue',sans-serif; font-size:1.05rem; color:var(--gold); width:20px; text-align:center; }
+.lp-lname { font-family:'Inter',sans-serif; font-size:0.78rem; color:var(--white); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lp-lelo { font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--green); margin-left:auto; font-weight:700; }
+.lp-status { display:flex; align-items:center; gap:8px; font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:1px; margin-bottom:14px; }
+.lp-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:lpDotPulse 1.6s infinite; }
+.lp-status.closed .lp-dot { background:var(--red); }
+.lp-status.closed #lp-status-text { color:var(--red); } .lp-status #lp-status-text { color:var(--green); }
+.lp-loading { font-family:'JetBrains Mono',monospace; font-size:0.62rem; color:var(--gray2); padding:8px 0; }
+
+.lp-hero {
+  position:absolute; left:50%; bottom:9%; transform:translateX(-50%); z-index:4;
+  width:min(640px,86vw); text-align:center;
+}
+.lp-title {
+  font-family:'Bebas Neue',sans-serif; font-size:clamp(3.4rem,8vw,6.2rem); line-height:0.86;
+  letter-spacing:2px; color:var(--white); text-shadow:0 6px 30px rgba(0,0,0,0.7);
+  animation:lpFadeUp 0.9s 0.1s ease both;
+}
+.lp-title .hill { color:var(--green); text-shadow:0 0 36px rgba(0,230,118,0.55); }
+.lp-tagline {
+  font-family:'Inter',sans-serif; font-size:clamp(0.85rem,1.6vw,1rem); color:var(--text);
+  margin:18px 0 26px; line-height:1.6; text-shadow:0 2px 12px rgba(0,0,0,0.8);
+  animation:lpFadeUp 0.9s 0.35s ease both;
+}
+.lp-tagline strong { color:var(--white); font-weight:700; }
+
+.lp-login-wrap {
+  position:relative; width:300px; height:60px; margin:0 auto;
+  cursor:pointer; overflow:hidden; border-radius:12px;
+  animation:lpFadeUp 0.9s 0.55s ease both;
+}
+.lp-login-btn {
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  border:none; border-radius:12px;
+  background:linear-gradient(135deg, #00e676, #00b85f);
+  color:#06210f; font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:3px;
+  animation:lpGlowPulse 2.8s ease-in-out infinite;
+}
+.lp-login-btn .lp-crown { font-size:1.2rem; }
+.lp-login-wrap:hover .lp-login-btn { background:linear-gradient(135deg,#1bff8a,#00d46d); transform:scale(1.02); }
+.lp-login-wrap:active .lp-login-btn { transform:scale(0.98); }
+.lp-gsi { position:absolute; inset:0; z-index:5; opacity:0.001; transform:scale(2.4); transform-origin:center; }
+
+.lp-journey {
+  display:flex; align-items:center; justify-content:center; gap:10px; margin-top:22px;
+  font-family:'JetBrains Mono',monospace; font-size:0.6rem; letter-spacing:2px; color:var(--gray);
+  animation:lpFadeUp 0.9s 0.7s ease both;
+}
+.lp-journey span { color:var(--text); } .lp-journey i { color:var(--green); font-style:normal; }
+.lp-footer {
+  position:absolute; bottom:16px; left:50%; transform:translateX(-50%); z-index:4;
+  font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:#3a4456; letter-spacing:1px; white-space:nowrap;
+}
+.lp-footer a { color:#4a576b; text-decoration:none; } .lp-footer a:hover { color:var(--green); }
+
+@media (max-width:920px) {
+  #page-landing { display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:80px 16px 60px; overflow-y:auto; }
+  .lp-panel, .lp-hero { position:static; transform:none; width:100%; max-width:420px; }
+  .lp-hero { order:1; margin:10px auto 26px; }
+  .lp-left  { order:2; margin-bottom:14px; }
+  .lp-right { order:3; }
+  .lp-topbar { position:static; flex-direction:row; width:100%; max-width:420px; padding:0 4px 20px; align-self:center; }
+  .lp-footer { position:static; transform:none; margin-top:24px; }
+  .lp-title { font-size:clamp(3rem,16vw,4.5rem); }
+}
 </style>
 </head>
 <body>
 
 <!-- ══ LANDING ══ -->
 <div id="page-landing" class="page active">
-  <div class="landing-bg"></div>
-  <video autoplay muted loop playsinline id="landing-video" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0.35;">
-    <source src="assets/bg.mp4" type="video/mp4">
-  </video>
-  <img src="assets/logo.png" class="landing-logo" onerror="this.style.display='none'">
-  <div class="landing-eyebrow"><span style="color:var(--green)">Unicapital Securities</span></div>
-  <div class="landing-title">
-    King of<br>the <span class="hill">Hill</span>
-  </div>
-  <div class="landing-sub">A stock market simulation built on real PSE data. Trade virtual money against real prices, outperform the index daily, climb the ranks and be the one true King.</div>
+  <div class="landing-bg-img" id="landing-bg-img"></div>
+  <div class="landing-scrim"></div>
 
-  <div class="landing-actions">
-    <div id="g_id_onload"
-      data-client_id="501217452261-dnphdo1abncnt5nhqcukvut952h0shjf.apps.googleusercontent.com"
-      data-callback="handleGoogleSignIn"
-      data-auto_prompt="false">
+  <div class="lp-topbar">
+    <div class="lp-brand">
+      <img src="assets/logo.png" class="lp-logo" onerror="this.style.display='none'">
+      <span class="lp-eyebrow">Unicapital Securities</span>
     </div>
-    <div class="g_id_signin"
-      data-type="standard"
-      data-size="large"
-      data-theme="filled_black"
-      data-text="continue_with"
-      data-shape="rectangular"
-      data-logo_alignment="left"
-      data-width="320">
+    <div class="lp-season">
+      <div class="lp-season-label">SEASON ENDS IN</div>
+      <div class="lp-season-time" id="lp-season-time">—</div>
     </div>
   </div>
-  <div style="position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:#3a3a50;letter-spacing:1px;z-index:1;white-space:nowrap;">
-    Powered by <a href="https://brubai.net/" target="_blank" style="color:#4a4a65;text-decoration:none;" onmouseover="this.style.color='#00c853'" onmouseout="this.style.color='#4a4a65'">BRUB AI</a>
+
+  <div class="lp-panel lp-left">
+    <div class="lp-psei" id="lp-psei" style="display:none;">
+      <div class="lp-panel-label" style="margin-top:0;">PSEi INDEX</div>
+      <div class="lp-psei-val" id="lp-psei-val">—</div>
+      <div class="lp-psei-chg" id="lp-psei-chg"></div>
+    </div>
+    <div class="lp-panel-label" style="margin-top:0;">Top Movers</div>
+    <div id="lp-movers"><div class="lp-loading">Loading market…</div></div>
   </div>
 
+  <div class="lp-panel lp-right">
+    <div class="lp-status" id="lp-status"><span class="lp-dot"></span><span id="lp-status-text">—</span></div>
+    <div class="lp-panel-label" style="margin-top:0;">Top Traders</div>
+    <div id="lp-leaders"><div class="lp-loading">Loading ranks…</div></div>
+  </div>
+
+  <div class="lp-hero">
+    <div class="lp-title">KING OF<br>THE <span class="hill">HILL</span></div>
+    <div class="lp-tagline"><strong>The stock market has a leaderboard now.</strong><br>Beat the index. Rank up. Become King.</div>
+
+    <div class="lp-login-wrap" id="lp-login-wrap">
+      <button class="lp-login-btn" type="button"><span class="lp-crown">♔</span> LOG IN</button>
+      <div id="g_id_onload"
+        data-client_id="501217452261-dnphdo1abncnt5nhqcukvut952h0shjf.apps.googleusercontent.com"
+        data-callback="handleGoogleSignIn"
+        data-auto_prompt="false"></div>
+      <div class="g_id_signin lp-gsi"
+        data-type="standard" data-size="large" data-theme="filled_black"
+        data-text="continue_with" data-shape="rectangular"
+        data-logo_alignment="left" data-width="300"></div>
+    </div>
+
+    <div class="lp-journey">
+      <span>CLIMB</span><i>›</i><span>BEAT</span><i>›</i><span>EARN</span><i>›</i><span>BECOME KING</span>
+    </div>
+  </div>
+
+  <div class="lp-footer">Powered by <a href="https://brubai.net/" target="_blank">BRUB AI</a></div>
 </div>
 
 <!-- Auth handled directly on landing via Google Sign In -->
@@ -1353,6 +1485,7 @@ function logout() {
   }
   document.getElementById('page-landing').style.display = 'flex';
   document.getElementById('page-app').style.display = 'none';
+  initLanding();
 }
 
 // ============================================================
@@ -2169,7 +2302,113 @@ window.addEventListener('load', async () => {
   // Show landing
   document.getElementById('page-landing').style.display = 'flex';
   document.getElementById('trade-cash').textContent = '₱' + STARTING_CASH.toLocaleString('en', {minimumFractionDigits:2});
+  initLanding();
 });
+
+// ============================================================
+// INTERACTIVE LANDING
+// ============================================================
+let lpSeasonData = null;
+
+function initLanding() {
+  loadLandingMarket();
+  loadLandingLeaders();
+  loadLandingSeason();
+  setLandingMarketStatus();
+  setInterval(setLandingMarketStatus, 30000);
+  initLandingParallax();
+}
+
+async function loadLandingMarket() {
+  // PSEi index — best effort (hidden if unavailable)
+  try {
+    const res = await gasGet({ action: 'get_price', symbol: 'PCOMP' });
+    if (res.success && res.price > 0) {
+      document.getElementById('lp-psei').style.display = 'block';
+      document.getElementById('lp-psei-val').textContent = res.price.toLocaleString('en', {minimumFractionDigits:2});
+      const up = (res.changePct || 0) >= 0;
+      const chg = document.getElementById('lp-psei-chg');
+      chg.textContent = (up ? '▲ +' : '▼ ') + (res.changePct || 0).toFixed(2) + '%';
+      chg.style.color = up ? 'var(--green)' : 'var(--red)';
+    }
+  } catch(e) {}
+
+  // Top movers
+  const pool = ['JFC','ALI','SM','BDO','MER','BPI','ICT','SMPH','GLO','MBT','AEV','URC','CNPF','BLOOM','PGOLD','AC','JGS','MEG'];
+  const rows = [];
+  await Promise.all(pool.map(async sym => {
+    try {
+      const res = await gasGet({ action: 'get_price', symbol: sym });
+      if (res.success && res.price > 0) rows.push({ sym, price: res.price, chg: res.changePct || 0 });
+    } catch(e) {}
+  }));
+  const el = document.getElementById('lp-movers');
+  if (!el) return;
+  if (!rows.length) { el.innerHTML = '<div class="lp-loading">Market data unavailable.</div>'; return; }
+  rows.sort((a,b) => b.chg - a.chg);
+  el.innerHTML = rows.slice(0,5).map(r => {
+    const up = r.chg >= 0;
+    return `<div class="lp-row"><span class="sym">${r.sym}</span><span class="px">₱${r.price.toFixed(2)}</span><span class="chg ${up?'up':'down'}">${up?'+':''}${r.chg.toFixed(2)}%</span></div>`;
+  }).join('');
+}
+
+async function loadLandingLeaders() {
+  const el = document.getElementById('lp-leaders');
+  if (!el) return;
+  try {
+    const res = await gasGet({ action: 'leaderboard' });
+    const lb = (res.success && res.leaderboard) ? res.leaderboard : [];
+    if (!lb.length) { el.innerHTML = '<div class="lp-loading">No rankings yet.</div>'; return; }
+    const top = [...lb].sort((a,b) => (b.ELO||0)-(a.ELO||0)).slice(0,5);
+    el.innerHTML = top.map((p,i) => {
+      const name = p.Username || '—';
+      return `<div class="lp-lrow"><span class="lp-lrank">${i===0?'♔':(i+1)}</span><span class="lp-lname">${name}</span><span class="lp-lelo">${(p.ELO||0).toLocaleString()}</span></div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="lp-loading">Rankings unavailable.</div>'; }
+}
+
+async function loadLandingSeason() {
+  try {
+    const res = await gasGet({ action: 'get_season' });
+    if (res.success && res.season) { lpSeasonData = res.season; updateLandingCountdown(); setInterval(updateLandingCountdown, 1000); }
+  } catch(e) {}
+}
+function updateLandingCountdown() {
+  const el = document.getElementById('lp-season-time');
+  if (!el || !lpSeasonData) return;
+  const diff = new Date(lpSeasonData.EndDate) - new Date();
+  if (diff <= 0) { el.textContent = 'ENDED'; return; }
+  const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000), m = Math.floor((diff%3600000)/60000);
+  el.textContent = d + 'D ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
+function setLandingMarketStatus() {
+  const el = document.getElementById('lp-status'); const txt = document.getElementById('lp-status-text');
+  if (!el || !txt) return;
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone:'Asia/Manila', weekday:'short', hour:'2-digit', minute:'2-digit', hour12:false }).formatToParts(new Date());
+  const wd = parts.find(p=>p.type==='weekday').value;
+  const hh = parseInt(parts.find(p=>p.type==='hour').value);
+  const mm = parseInt(parts.find(p=>p.type==='minute').value);
+  const mins = hh*60 + mm;
+  const open = !['Sat','Sun'].includes(wd) && mins >= 540 && mins <= 930; // 9:00–15:30 Manila
+  el.className = 'lp-status' + (open ? '' : ' closed');
+  txt.textContent = open ? 'MARKET OPEN' : 'MARKET CLOSED';
+}
+
+function initLandingParallax() {
+  const bg = document.getElementById('landing-bg-img');
+  if (!bg || window.matchMedia('(max-width:920px)').matches) return;
+  let raf = null;
+  window.addEventListener('mousemove', (e) => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 24;
+      const y = (e.clientY / window.innerHeight - 0.5) * 24;
+      bg.style.transform = 'translate(' + (-x) + 'px,' + (-y) + 'px) scale(1.04)';
+      raf = null;
+    });
+  });
+}
 
 // ============================================================
 // PSE TICKER TAPE
