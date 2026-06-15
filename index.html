@@ -2024,11 +2024,12 @@ async function loadTradeFeed() {
       const ret = (t.ReturnPct || 0).toFixed(2);
       const retCls = t.ReturnPct >= 0 ? 'green' : 'red';
       const sign = t.ReturnPct >= 0 ? '+' : '';
+      const username = t.Username || ('Player #' + (t.PlayerID || '?'));
       const action = isBuy
         ? `<span style="color:var(--green);font-weight:700;">BOUGHT</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} @ ₱${(t.EntryPrice||0).toFixed(2)}`
         : `<span style="color:var(--red);font-weight:700;">SOLD</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
       return `<div class="trade-feed-item">
-        <div class="trade-feed-player">${t.Username || 'Unknown'}</div>
+        <div class="trade-feed-player">${username}</div>
         <div class="trade-feed-detail">${action}</div>
         <div class="trade-feed-detail">${t.CloseDate || '—'}</div>
       </div>`;
