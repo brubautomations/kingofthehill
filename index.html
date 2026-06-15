@@ -613,6 +613,11 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
 /* SVG TIER BADGES */
 .tier-badge-svg{display:inline-flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:0.52rem;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:4px;}
 
+/* SEASON COUNTDOWN */
+.season-countdown{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);text-align:right;line-height:1.4;}
+.season-countdown .time{color:var(--koth);font-weight:700;font-size:0.65rem;}
+.season-countdown .label{color:var(--gray2);font-size:0.5rem;letter-spacing:1px;}
+
 /* AD SPACES */
 .ad-banner{background:linear-gradient(135deg,#0a0a1a,#12122a);border:1px solid var(--border2);border-radius:8px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .ad-logo{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:2px;color:var(--white);}
@@ -745,6 +750,7 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
   <div class="topbar">
     <div class="topbar-logo">KING OF THE <span>HILL</span></div>
     <div class="topbar-right">
+      <div class="season-countdown" id="season-countdown" style="margin-right:12px;"></div>
       <div class="user-rank-badge" onclick="navTo('profile')">
         <span class="rank-icon" id="topbar-tier-icon">🟤</span>
         <div class="rank-info">
@@ -1071,6 +1077,12 @@ body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;min-
             </div>
           </div>
         </div>
+        <div class="card" style="margin-top:14px;">
+          <div class="card-title">Season History</div>
+          <div id="season-history-list">
+            <div style="text-align:center;padding:20px;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);">Loading...</div>
+          </div>
+        </div>
         <div class="card" style="margin-top:14px;text-align:center;padding:28px;">
           <div class="card-title">Share Your Rank</div>
           <canvas id="share-canvas" width="1080" height="1080"></canvas>
@@ -1277,6 +1289,7 @@ async function loadApp() {
   startTradeFeed();
   startPortfolioRefresh();
   loadChatMessages();
+  loadSeasonCountdown();
 
   renderDashboard();
   renderTopbar();
@@ -1622,7 +1635,7 @@ function navTo(view) {
   if (view === 'leaderboard') renderLeaderboard();
   if (view === 'portfolio') renderPortfolio();
   if (view === 'history') { loadTrades().then(renderHistory); }
-  if (view === 'profile') renderProfile();
+  if (view === 'profile') { renderProfile(); loadSeasonHistory(); }
 }
 
 // ============================================================
@@ -2023,6 +2036,66 @@ async function saveStatusMessage() {
   } catch(e) {
     showToast('error', 'Error', 'Connection failed.');
   }
+}
+
+// ============================================================
+// SEASON COUNTDOWN
+// ============================================================
+let seasonData = null;
+
+async function loadSeasonCountdown() {
+  try {
+    const res = await gasGet({ action: 'get_season' });
+    if (!res.success || !res.season) return;
+    seasonData = res.season;
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  } catch(e) {}
+}
+
+function updateCountdown() {
+  if (!seasonData) return;
+  const el = document.getElementById('season-countdown');
+  if (!el) return;
+  const end = new Date(seasonData.EndDate);
+  const now = new Date();
+  const diff = end - now;
+  if (diff <= 0) {
+    el.innerHTML = '<div class="label">SEASON ENDED</div>';
+    return;
+  }
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  const pad = n => String(n).padStart(2, '0');
+  el.innerHTML = `<div class="time">${days}D ${pad(hours)}:${pad(mins)}:${pad(secs)}</div><div class="label">BEFORE "${seasonData.SeasonName}" ENDS</div>`;
+}
+
+// ============================================================
+// SEASON HISTORY
+// ============================================================
+async function loadSeasonHistory() {
+  try {
+    const res = await gasGet({ action: 'get_season_history', playerID: currentUser.playerID });
+    const el = document.getElementById('season-history-list');
+    if (!res.success || res.history.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;font-family:monospace;font-size:0.62rem;color:var(--gray);">No completed seasons yet.</div>';
+      return;
+    }
+    el.innerHTML = res.history.map(s => {
+      const tier = getTier(s.FinalELO || 0);
+      const ret = (s.FinalReturnPct || 0).toFixed(2);
+      const retCls = s.FinalReturnPct >= 0 ? 'var(--green)' : 'var(--red)';
+      const tierLabel = s.FinalSubTier > 0 ? s.FinalTier + ' ' + s.FinalSubTier : s.FinalTier;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;font-size:0.7rem;">
+        <div style="color:var(--gray);">${s.SeasonName || 'Season ' + s.SeasonNumber}</div>
+        <div style="color:var(--white);">${tierLabel}</div>
+        <div style="color:var(--white);">${(s.FinalELO||0).toLocaleString()} ELO</div>
+        <div style="color:${retCls};">${s.FinalReturnPct >= 0 ? '+' : ''}${ret}%</div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
 }
 
 // ============================================================
