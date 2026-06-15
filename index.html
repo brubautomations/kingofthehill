@@ -1620,25 +1620,28 @@ function calcOrderTotal() {
 
 async function fetchPrice(sym) {
   if (!sym || sym.length < 2) return;
-  document.getElementById('price-sym').textContent = sym;
+  const s = sym.toUpperCase();
+  document.getElementById('price-sym').textContent = s;
   document.getElementById('price-current').textContent = 'Loading...';
+  document.getElementById('price-change').textContent = '';
   try {
-    const res = await gasGet({ action: 'get_price', symbol: sym });
-    if (res.success && res.price) {
-      const price = res.price;
-      const change = res.changePct || 0;
+    const res = await gasGet({ action: 'get_price', symbol: s });
+    console.log('fetchPrice response:', res);
+    if (res && res.success && res.price > 0) {
+      const price = parseFloat(res.price);
+      const change = parseFloat(res.changePct || 0);
       document.getElementById('price-current').textContent = '₱' + price.toFixed(2);
       document.getElementById('price-change').textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '% today';
       document.getElementById('price-change').style.color = change >= 0 ? 'var(--green)' : 'var(--red)';
-      // Auto-fill price field
       document.getElementById('trade-price').value = price.toFixed(2);
       calcOrderTotal();
     } else {
-      document.getElementById('price-current').textContent = 'Not found';
-      document.getElementById('price-change').textContent = 'Check symbol and try again';
+      document.getElementById('price-current').textContent = 'Not available';
+      document.getElementById('price-change').textContent = res.error || 'Try again during market hours';
       document.getElementById('price-change').style.color = 'var(--gray)';
     }
   } catch(e) {
+    console.error('fetchPrice error:', e);
     document.getElementById('price-current').textContent = 'Error';
     document.getElementById('price-change').style.color = 'var(--gray)';
   }
