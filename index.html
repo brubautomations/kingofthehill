@@ -1355,13 +1355,13 @@ function renderDashboard() {
   document.getElementById('dash-progress-text').textContent = (elo - tier.min) + ' / ' + (tier.max - tier.min + 1) + ' ELO — ' + (needed > 0 ? needed + ' to next rank' : 'MAX TIER REACHED');
 
   // Holdings
-  renderHoldingsQuick();
+  renderHoldingsQuick(); // async — runs independently
 
   // KOTH quick
   renderKOTHQuick();
 }
 
-function renderHoldingsQuick() {
+async function renderHoldingsQuick() {
   const tbody = document.getElementById('dash-holdings');
   const empty = document.getElementById('dash-no-holdings');
   if (holdings.length === 0) {
@@ -1370,20 +1370,41 @@ function renderHoldingsQuick() {
     return;
   }
   empty.style.display = 'none';
-  tbody.innerHTML = holdings.map(h => {
-    const pl = (h.CurrentPrice - h.EntryPrice) * h.Shares;
-    const plp = h.EntryPrice > 0 ? ((h.CurrentPrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
+
+  // Fetch live prices for all holdings
+  const priceMap = {};
+  await Promise.all(holdings.map(async h => {
+    try {
+      const res = await gasGet({ action: 'get_price', symbol: h.Stock });
+      if (res.success && res.price > 0) priceMap[h.Stock] = res.price;
+    } catch(e) {}
+  }));
+
+  let totalPortValue = playerData?.VirtualCash || 0;
+  const sortedHoldings = [...holdings].sort((a,b) => new Date(b.EntryDate||0) - new Date(a.EntryDate||0));
+  tbody.innerHTML = sortedHoldings.map(h => {
+    const livePrice = priceMap[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
+    const pl = (livePrice - h.EntryPrice) * h.Shares;
+    const plp = h.EntryPrice > 0 ? ((livePrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
     const cls = pl >= 0 ? 'green' : 'red';
     const sign = pl >= 0 ? '+' : '';
+    totalPortValue += livePrice * h.Shares;
     return `<tr>
       <td>${h.Stock}</td>
       <td>${(h.Shares || 0).toLocaleString()}</td>
       <td>₱${(h.EntryPrice || 0).toFixed(2)}</td>
-      <td>₱${(h.CurrentPrice || 0).toFixed(2)}</td>
+      <td>₱${livePrice.toFixed(2)}</td>
       <td class="${cls}">${sign}₱${Math.abs(pl).toLocaleString('en',{minimumFractionDigits:2})}</td>
       <td class="${cls}">${sign}${plp}%</td>
     </tr>`;
   }).join('');
+
+  // Update portfolio value display with live calculation
+  const ret = totalPortValue - 100000;
+  const retPct = (ret / 100000 * 100).toFixed(2);
+  document.getElementById('dash-portval').textContent = '₱' + totalPortValue.toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('dash-portreturn').textContent = (ret >= 0 ? '+' : '') + '₱' + Math.abs(ret).toLocaleString('en',{minimumFractionDigits:2}) + ' (' + (ret >= 0 ? '+' : '') + retPct + '%)';
+  document.getElementById('dash-portreturn').className = 'stat-sub ' + (ret >= 0 ? 'green' : 'red');
 }
 
 function renderKOTHQuick() {
@@ -1466,7 +1487,7 @@ function renderLeaderboard() {
   document.getElementById('lb-updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit',minute:'2-digit'});
 }
 
-function renderPortfolio() {
+async function renderPortfolio() {
   if (!playerData) return;
   const cash = playerData.VirtualCash || STARTING_CASH;
   const portval = playerData.PortfolioValue || STARTING_CASH;
@@ -1484,19 +1505,29 @@ function renderPortfolio() {
   const empty = document.getElementById('port-empty');
   if (holdings.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
+  // Fetch live prices
+  const livePrices = {};
+  await Promise.all(holdings.map(async h => {
+    try {
+      const res = await gasGet({ action: 'get_price', symbol: h.Stock });
+      if (res.success && res.price > 0) livePrices[h.Stock] = res.price;
+    } catch(e) {}
+  }));
+
   tbody.innerHTML = holdings.map(h => {
-    const pl2 = (h.CurrentPrice - h.EntryPrice) * h.Shares;
-    const plp = h.EntryPrice > 0 ? ((h.CurrentPrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
+    const livePrice = livePrices[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
+    const pl2 = (livePrice - h.EntryPrice) * h.Shares;
+    const plp = h.EntryPrice > 0 ? ((livePrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
     const cls = pl2 >= 0 ? 'green' : 'red';
     const sign = pl2 >= 0 ? '+' : '';
     return `<tr>
       <td>${h.Stock}</td>
       <td>${(h.Shares||0).toLocaleString()}</td>
-      <td>₱${(h.EntryPrice||0).toFixed(4)}</td>
-      <td>₱${(h.CurrentPrice||0).toFixed(4)}</td>
+      <td>₱${(h.EntryPrice||0).toFixed(2)}</td>
+      <td>₱${livePrice.toFixed(2)}</td>
       <td class="${cls}">${sign}₱${Math.abs(pl2).toLocaleString('en',{minimumFractionDigits:2})}</td>
       <td class="${cls}">${sign}${plp}%</td>
-      <td><button onclick="openSellModal('${h.Stock}',${h.CurrentPrice},${h.Shares})" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">SELL</button></td>
+      <td><button onclick="openSellModal('${h.Stock}',${livePrice},${h.Shares})" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">SELL</button></td>
     </tr>`;
   }).join('');
 }
@@ -1524,7 +1555,8 @@ function renderHistory() {
     }).join('');
   }
 
-  // CLOSED trades
+  // CLOSED trades — newest first
+  const sortedTrades = [...trades].sort((a,b) => new Date(b.CloseDate||0) - new Date(a.CloseDate||0));
   const tbody = document.getElementById('history-body');
   const empty = document.getElementById('history-empty');
   if (trades.length === 0) {
@@ -1532,7 +1564,7 @@ function renderHistory() {
     empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
-    tbody.innerHTML = trades.map(t => {
+    tbody.innerHTML = sortedTrades.map(t => {
       const cls = t.ReturnPct >= 0 ? 'green' : 'red';
       const sign = t.ReturnPct >= 0 ? '+' : '';
       return `<tr>
@@ -2039,7 +2071,7 @@ async function loadTradeFeed() {
 
 function startTradeFeed() {
   loadTradeFeed();
-  tradeFeedInterval = setInterval(loadTradeFeed, 5 * 60 * 1000); // every 5 min
+  tradeFeedInterval = setInterval(loadTradeFeed, 30 * 1000); // every 30 seconds
 }
 
 // ============================================================
