@@ -1378,6 +1378,7 @@ async function loadApp() {
 
   renderDashboard();
   renderTopbar();
+  if (playerData) document.getElementById('trade-cash').textContent = '₱' + (playerData.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
 }
 
 async function loadPlayerData() {
@@ -1590,22 +1591,12 @@ function renderLeaderboard() {
 async function renderPortfolio() {
   if (!playerData) return;
   const cash = playerData.VirtualCash || STARTING_CASH;
-  const portval = playerData.PortfolioValue || STARTING_CASH;
-  const pl = portval - STARTING_CASH;
-  const plpct = (pl / STARTING_CASH * 100).toFixed(2);
-
-  document.getElementById('port-total').textContent = '₱' + portval.toLocaleString('en', {minimumFractionDigits:2});
   document.getElementById('port-cash').textContent = '₱' + cash.toLocaleString('en', {minimumFractionDigits:2});
-  document.getElementById('port-pl').textContent = (pl >= 0 ? '+' : '') + '₱' + Math.abs(pl).toLocaleString('en', {minimumFractionDigits:2});
-  document.getElementById('port-pl').className = 'stat-val ' + (pl >= 0 ? 'green' : 'red');
-  document.getElementById('port-plpct').textContent = (pl >= 0 ? '+' : '') + plpct + '%';
-  document.getElementById('port-plpct').className = 'stat-sub ' + (pl >= 0 ? 'green' : 'red');
 
   const tbody = document.getElementById('port-holdings');
   const empty = document.getElementById('port-empty');
-  if (holdings.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-  empty.style.display = 'none';
-  // Fetch live prices
+
+  // Fetch live prices for open holdings
   const livePrices = {};
   await Promise.all(holdings.map(async h => {
     try {
@@ -1613,6 +1604,25 @@ async function renderPortfolio() {
       if (res.success && res.price > 0) livePrices[h.Stock] = res.price;
     } catch(e) {}
   }));
+
+  // Live total value = cash + market value of holdings
+  let holdingsValue = 0;
+  holdings.forEach(h => {
+    const lp = livePrices[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
+    holdingsValue += lp * (h.Shares || 0);
+  });
+  const portval = cash + holdingsValue;
+  const pl = portval - STARTING_CASH;
+  const plpct = (pl / STARTING_CASH * 100).toFixed(2);
+
+  document.getElementById('port-total').textContent = '₱' + portval.toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('port-pl').textContent = (pl >= 0 ? '+' : '') + '₱' + Math.abs(pl).toLocaleString('en', {minimumFractionDigits:2});
+  document.getElementById('port-pl').className = 'stat-val ' + (pl >= 0 ? 'green' : 'red');
+  document.getElementById('port-plpct').textContent = (pl >= 0 ? '+' : '') + plpct + '%';
+  document.getElementById('port-plpct').className = 'stat-sub ' + (pl >= 0 ? 'green' : 'red');
+
+  if (holdings.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
 
   tbody.innerHTML = holdings.map(h => {
     const livePrice = livePrices[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
@@ -1655,11 +1665,12 @@ function renderHistory() {
     }).join('');
   }
 
-  // CLOSED trades — newest first
-  const sortedTrades = [...trades].sort((a,b) => new Date(b.CloseDate||0) - new Date(a.CloseDate||0));
+  // CLOSED trades — actual closes only (exclude BUY activity rows), newest first
+  const closedTrades = trades.filter(t => t.CloseType !== 'BUY');
+  const sortedTrades = [...closedTrades].sort((a,b) => new Date(b.CloseDate||0) - new Date(a.CloseDate||0));
   const tbody = document.getElementById('history-body');
   const empty = document.getElementById('history-empty');
-  if (trades.length === 0) {
+  if (closedTrades.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = 'block';
   } else {
@@ -1800,6 +1811,7 @@ function navTo(view) {
   document.getElementById('view-' + view)?.classList.add('active');
 
   if (view === 'leaderboard') renderLeaderboard();
+  if (view === 'trade' && playerData) document.getElementById('trade-cash').textContent = '₱' + (playerData.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
   if (view === 'portfolio') renderPortfolio();
   if (view === 'history') { loadTrades().then(renderHistory); }
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
