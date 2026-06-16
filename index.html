@@ -498,6 +498,8 @@ body{
 .trade-side-btn{padding:14px;border-radius:10px;border:1px solid var(--border2);font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;font-weight:400;cursor:pointer;background:var(--bg3);color:var(--gray);transition:all 0.15s;}
 .trade-side-btn.buy.active{background:var(--green-dim);color:var(--green);border-color:var(--green);box-shadow:0 0 18px rgba(0,230,118,0.25);}
 .trade-side-btn.sell.active{background:var(--red-dim);color:var(--red);border-color:var(--red);box-shadow:0 0 18px rgba(255,67,101,0.25);}
+.trade-type-btn{padding:11px;border-radius:9px;border:1px solid var(--border2);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;background:var(--bg3);color:var(--gray);transition:all 0.15s;}
+.trade-type-btn.active{background:rgba(212,175,55,0.12);color:var(--koth);border-color:var(--koth);box-shadow:0 0 14px rgba(212,175,55,0.18);}
 .trade-input-group{margin-bottom:13px;}
 .trade-input-group label{display:block;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;}
 .trade-input-group input,.trade-input-group select{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:12px 14px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.92rem;outline:none;transition:border-color 0.15s;}
@@ -1079,14 +1081,22 @@ body{
               <button class="trade-side-btn buy active" id="tbtn-buy" onclick="setTradeSide('buy')">BUY</button>
               <button class="trade-side-btn sell" id="tbtn-sell" onclick="setTradeSide('sell')">SELL</button>
             </div>
+            <div id="trade-offhours" style="display:none;margin:0 0 12px;padding:9px 12px;border:1px solid var(--koth);border-radius:6px;background:rgba(212,175,55,0.08);font-family:'JetBrains Mono',monospace;font-size:0.68rem;line-height:1.45;color:var(--koth);">
+              Market's closed right now &mdash; your order will queue and fill at the <strong>opening price</strong> when trading resumes. The figure below is just a reference, not your guaranteed fill.
+            </div>
+            <div class="trade-grid" style="margin-bottom:14px;">
+              <button class="trade-type-btn active" id="ttype-market" onclick="setTradeType('market')">MARKET</button>
+              <button class="trade-type-btn" id="ttype-limit" onclick="setTradeType('limit')">LIMIT</button>
+            </div>
             <div class="trade-input-group">
               <label>Stock Symbol</label>
               <input type="text" id="trade-stock" placeholder="e.g. JFC, ALI, BDO" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();fetchPrice(this.value)">
             </div>
             <div class="trade-input-group">
-              <label>Current Price (₱)</label>
+              <label id="trade-price-label">Current Price (₱)</label>
               <input type="number" id="trade-price" placeholder="0.00" oninput="calcOrderTotal()">
             </div>
+            <div id="trade-type-hint" style="display:none;font-family:'JetBrains Mono',monospace;font-size:0.64rem;line-height:1.4;color:var(--gray);margin:-6px 0 13px;"></div>
             <div class="trade-input-group">
               <label>Number of Shares</label>
               <input type="number" id="trade-shares" placeholder="0" oninput="calcOrderTotal()">
@@ -1200,6 +1210,15 @@ body{
       <!-- HISTORY -->
       <div class="view" id="view-history">
         <div class="view-title">Trade History</div>
+        <!-- RESTING LIMIT ORDERS -->
+        <div class="card" style="margin-bottom:14px;">
+          <div class="card-title">RESTING LIMIT ORDERS — Fill When Price Is Hit · Expire Friday 5PM</div>
+          <table class="data-table">
+            <thead><tr><th>Stock</th><th>Side</th><th>Limit Price</th><th>Shares</th><th>Placed</th><th></th></tr></thead>
+            <tbody id="orders-body"></tbody>
+          </table>
+          <div id="orders-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No resting limit orders.</div>
+        </div>
         <!-- PENDING ORDERS -->
         <div class="card" style="margin-bottom:14px;">
           <div class="card-title">PENDING ORDERS — Executes at Next Market Open</div>
@@ -1320,6 +1339,7 @@ let holdings = [];
 let trades = [];
 let leaderboard = [];
 let tradeSide = 'buy';
+let tradeType = 'market';
 let pendingOrder = null;
 let allHoldings = [];
 
@@ -1963,8 +1983,9 @@ function navTo(view) {
 
   if (view === 'leaderboard') renderLeaderboard();
   if (view === 'trade' && playerData) document.getElementById('trade-cash').textContent = '₱' + (playerData.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
+  if (view === 'trade') setTradeMarketReminder();
   if (view === 'portfolio') renderPortfolio();
-  if (view === 'history') { loadTrades().then(renderHistory); }
+  if (view === 'history') { loadTrades().then(renderHistory); loadOrders(); }
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
 }
 
@@ -1976,7 +1997,43 @@ function setTradeSide(side) {
   document.getElementById('tbtn-buy').className = 'trade-side-btn buy' + (side === 'buy' ? ' active' : '');
   document.getElementById('tbtn-sell').className = 'trade-side-btn sell' + (side === 'sell' ? ' active' : '');
   document.getElementById('trade-submit').className = 'trade-submit ' + side;
-  document.getElementById('trade-submit').textContent = 'PLACE ' + side.toUpperCase() + ' ORDER';
+  updateTradeSubmitLabel();
+}
+
+function setTradeType(type) {
+  tradeType = type;
+  document.getElementById('ttype-market').className = 'trade-type-btn' + (type === 'market' ? ' active' : '');
+  document.getElementById('ttype-limit').className = 'trade-type-btn' + (type === 'limit' ? ' active' : '');
+  const priceInput = document.getElementById('trade-price');
+  const priceLabel = document.getElementById('trade-price-label');
+  const hint = document.getElementById('trade-type-hint');
+  if (type === 'market') {
+    priceLabel.textContent = 'Current Price (₱)';
+    if (priceInput) { priceInput.readOnly = true; priceInput.style.opacity = '0.6'; }
+    if (hint) { hint.style.display = 'block'; hint.textContent = 'Fills at the live market price — the price above is just a reference.'; }
+  } else {
+    priceLabel.textContent = 'Limit Price (₱) — your target';
+    if (priceInput) { priceInput.readOnly = false; priceInput.style.opacity = '1'; }
+    if (hint) { hint.style.display = 'block'; hint.textContent = 'Rests until the market hits your price, then fills at that price. Expires Friday 5PM.'; }
+  }
+  updateTradeSubmitLabel();
+}
+
+function updateTradeSubmitLabel() {
+  const btn = document.getElementById('trade-submit');
+  if (!btn) return;
+  btn.textContent = 'PLACE ' + (tradeType === 'limit' ? 'LIMIT ' : '') + tradeSide.toUpperCase() + ' ORDER';
+}
+
+// Show the off-hours notice only when the PSE is closed (Manila time, M-F 9:00-15:30).
+function setTradeMarketReminder() {
+  const el = document.getElementById('trade-offhours');
+  if (!el) return;
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone:'Asia/Manila', weekday:'short', hour:'2-digit', minute:'2-digit', hour12:false }).formatToParts(new Date());
+  const wd = parts.find(p=>p.type==='weekday').value;
+  const mins = parseInt(parts.find(p=>p.type==='hour').value)*60 + parseInt(parts.find(p=>p.type==='minute').value);
+  const open = !['Sat','Sun'].includes(wd) && mins >= 540 && mins <= 930;
+  el.style.display = open ? 'none' : 'block';
 }
 
 function calcOrderTotal() {
@@ -2025,6 +2082,7 @@ async function fetchPrice(sym) {
 function openSellModal(stock, price, shares) {
   navTo('trade');
   setTradeSide('sell');
+  setTradeType('market');
   document.getElementById('trade-stock').value = stock;
   document.getElementById('trade-price').value = price.toFixed(2);
   document.getElementById('trade-shares').value = shares;
@@ -2049,13 +2107,13 @@ function openConfirm() {
     return;
   }
 
-  pendingOrder = { stock, side: tradeSide, price, shares, total };
+  pendingOrder = { stock, side: tradeSide, type: tradeType, price, shares, total };
 
   document.getElementById('cf-stock').textContent = stock + '.PSE';
-  document.getElementById('cf-side').textContent = tradeSide.toUpperCase();
+  document.getElementById('cf-side').textContent = (tradeType === 'limit' ? 'LIMIT ' : 'MARKET ') + tradeSide.toUpperCase();
   document.getElementById('cf-side').style.color = tradeSide === 'buy' ? 'var(--green)' : 'var(--red)';
   document.getElementById('cf-shares').textContent = shares.toLocaleString();
-  document.getElementById('cf-price').textContent = '₱' + price.toFixed(2);
+  document.getElementById('cf-price').textContent = (tradeType === 'limit' ? 'Limit ₱' : '≈ ₱') + price.toFixed(2);
   document.getElementById('cf-total').textContent = '₱' + total.toLocaleString('en', {minimumFractionDigits:2});
 
   document.getElementById('confirm-modal').classList.add('show');
@@ -2070,29 +2128,45 @@ async function executeOrder() {
   if (!pendingOrder) return;
   const o = {...pendingOrder}; // copy before closing
   closeConfirm();
-  const action = o.side === 'buy' ? 'buy' : 'sell';
   try {
-    showToast('info', 'Processing...', 'Executing your order.');
-    const res = await gasPost({
-      action,
-      playerID: currentUser.playerID,
-      stock: o.stock,
-      price: o.price,
-      shares: o.shares
-    });
+    showToast('info', 'Processing...', 'Submitting your order.');
+    let res;
+    if (o.type === 'limit') {
+      res = await gasPost({
+        action: 'place_limit',
+        playerID: currentUser.playerID,
+        stock: o.stock,
+        side: o.side.toUpperCase(),
+        limitPrice: o.price,
+        shares: o.shares
+      });
+    } else {
+      res = await gasPost({
+        action: o.side === 'buy' ? 'buy' : 'sell',
+        playerID: currentUser.playerID,
+        stock: o.stock,
+        price: o.price,
+        shares: o.shares
+      });
+    }
     console.log('Order response:', JSON.stringify(res));
     if (res.success) {
-      showToast('success', 'Order Executed! ✅', res.message || (o.side.toUpperCase() + ' ' + o.shares + ' ' + o.stock + ' @ ₱' + o.price));
-      if (action === 'sell' && Array.isArray(res.eloBreakdown)) {
-        showCloseReceipt(o.stock, res.eloChange || 0, res.eloBreakdown);
+      if (res.resting) {
+        showToast('success', 'Limit Order Resting ⏳', res.message || 'Your order is resting and fills when the price is hit.');
+      } else {
+        showToast('success', 'Order Executed! ✅', res.message || (o.side.toUpperCase() + ' ' + o.shares + ' ' + o.stock));
+        if (o.side === 'sell' && Array.isArray(res.eloBreakdown)) {
+          showCloseReceipt(o.stock, res.eloChange || 0, res.eloBreakdown);
+        }
       }
       await loadPlayerData();
       await loadHoldings();
+      await loadOrders();
       renderDashboard();
       renderTopbar();
       document.getElementById('trade-cash').textContent = '₱' + (playerData?.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
     } else {
-      showToast('error', 'Order Failed', res.error || 'Could not execute order.');
+      showToast('error', 'Order Failed', res.error || 'Could not place order.');
       console.error('Order failed:', JSON.stringify(res));
     }
   } catch(e) {
@@ -2726,7 +2800,64 @@ async function cancelPendingOrder(holdingRecordId) {
   }
 }
 
+// Load + render this player's RESTING limit orders into the Trade History table.
+async function loadOrders() {
+  if (!currentUser) return;
+  const body = document.getElementById('orders-body');
+  const empty = document.getElementById('orders-empty');
+  if (!body) return;
+  try {
+    const res = await gasGet({ action: 'get_orders', playerID: currentUser.playerID });
+    const orders = (res && res.success && Array.isArray(res.orders)) ? res.orders : [];
+    if (orders.length === 0) {
+      body.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    orders.sort((a,b) => new Date(b.PlacedAt||0) - new Date(a.PlacedAt||0));
+    body.innerHTML = orders.map(o => {
+      const side = (o.Side || '').toUpperCase();
+      const sideColor = side === 'BUY' ? 'var(--green)' : 'var(--red)';
+      const placed = o.PlacedAt ? String(o.PlacedAt).slice(0,10) : '—';
+      const lp = (o.LimitPrice != null) ? '₱' + Number(o.LimitPrice).toFixed(2) : '—';
+      return '<tr>' +
+        '<td style="font-weight:700;color:var(--koth);">' + (o.Stock || '') + '</td>' +
+        '<td style="color:' + sideColor + ';font-weight:700;">' + side + '</td>' +
+        '<td>' + lp + '</td>' +
+        '<td>' + (o.Shares || 0).toLocaleString() + '</td>' +
+        '<td style="color:var(--gray);font-size:0.7rem;">' + placed + '</td>' +
+        '<td><button onclick="cancelLimitOrder(\'' + (o.id || '') + '\')" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;">CANCEL</button></td>' +
+        '</tr>';
+    }).join('');
+  } catch(e) {
+    console.error('loadOrders error:', e);
+  }
+}
+
+async function cancelLimitOrder(orderId) {
+  if (!orderId) return;
+  if (!confirm('Cancel this resting limit order? A buy order refunds your reserved cash.')) return;
+  try {
+    const res = await gasPost({ action: 'cancel_limit', playerID: currentUser.playerID, orderId });
+    if (res.success) {
+      showToast('success', 'Limit Order Cancelled', res.message || 'Order cancelled.');
+      await loadPlayerData();
+      await loadOrders();
+      renderTopbar();
+      renderDashboard();
+      const cashEl = document.getElementById('trade-cash');
+      if (cashEl) cashEl.textContent = '₱' + (playerData?.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
+    } else {
+      showToast('error', 'Failed', res.error || 'Could not cancel order.');
+    }
+  } catch(e) {
+    showToast('error', 'Error', 'Connection failed.');
+  }
+}
+
 setTradeSide('buy');
+setTradeType('market');
 
 // ============================================================
 // PHILIPPINE SCHOOLS AUTOCOMPLETE
