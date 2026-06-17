@@ -1112,6 +1112,7 @@ body{
               <div class="card-title">Market Price — <span id="price-sym" style="color:var(--koth);">—</span></div>
               <div style="font-family:'Bebas Neue',sans-serif;font-size:3.4rem;line-height:1;color:var(--white);margin-bottom:6px;" id="price-current">—</div>
               <div style="font-family:'JetBrains Mono',monospace;font-size:0.95rem;font-weight:700;" id="price-change">—</div>
+              <div id="trade-held" style="display:none;margin-top:12px;padding:9px 12px;border:1px solid var(--border2);border-radius:7px;background:var(--bg3);font-family:'JetBrains Mono',monospace;font-size:0.72rem;line-height:1.5;color:var(--koth);"></div>
             </div>
             <div class="card">
               <div class="card-title">Account Balance</div>
@@ -1212,12 +1213,12 @@ body{
         <div class="view-title">Trade History</div>
         <!-- RESTING LIMIT ORDERS -->
         <div class="card" style="margin-bottom:14px;">
-          <div class="card-title">RESTING LIMIT ORDERS — Fill When Price Is Hit · Expire Friday 5PM</div>
+          <div class="card-title">OPEN ORDERS — Limits Fill When Price Hits · Queued Sells Fill at Open · Expire Friday 5PM</div>
           <table class="data-table">
-            <thead><tr><th>Stock</th><th>Side</th><th>Limit Price</th><th>Shares</th><th>Placed</th><th></th></tr></thead>
+            <thead><tr><th>Stock</th><th>Side</th><th>Price</th><th>Shares</th><th>Placed</th><th></th></tr></thead>
             <tbody id="orders-body"></tbody>
           </table>
-          <div id="orders-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No resting limit orders.</div>
+          <div id="orders-empty" style="text-align:center;padding:20px;color:var(--gray);font-size:0.78rem;">No open orders.</div>
         </div>
         <!-- PENDING ORDERS -->
         <div class="card" style="margin-bottom:14px;">
@@ -2077,6 +2078,23 @@ async function fetchPrice(sym) {
     document.getElementById('price-current').textContent = 'Error';
     document.getElementById('price-change').style.color = 'var(--gray)';
   }
+  updateHeldDisplay(s);
+}
+
+// Show how many shares of `sym` you already hold (open position) and your average entry.
+function updateHeldDisplay(sym) {
+  const el = document.getElementById('trade-held');
+  if (!el) return;
+  const s = (sym || '').toUpperCase();
+  if (!s) { el.style.display = 'none'; return; }
+  const lots = (allHoldings || []).filter(h => (h.Stock || '').toUpperCase() === s && h.Status === 'OPEN');
+  if (lots.length === 0) { el.style.display = 'none'; return; }
+  const shares = lots.reduce((n, h) => n + (h.Shares || 0), 0);
+  const cost = lots.reduce((c, h) => c + ((h.EntryPrice || 0) * (h.Shares || 0)), 0);
+  const avg = shares > 0 ? cost / shares : 0;
+  if (shares <= 0) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = 'You already hold <strong>' + shares.toLocaleString() + '</strong> ' + s + ' shares · avg entry ₱' + avg.toFixed(2);
 }
 
 function openSellModal(stock, price, shares) {
@@ -2820,10 +2838,13 @@ async function loadOrders() {
       const side = (o.Side || '').toUpperCase();
       const sideColor = side === 'BUY' ? 'var(--green)' : 'var(--red)';
       const placed = o.PlacedAt ? String(o.PlacedAt).slice(0,10) : '—';
-      const lp = (o.LimitPrice != null) ? '₱' + Number(o.LimitPrice).toFixed(2) : '—';
+      const queuedOpen = o.Status === 'PENDING_OPEN';
+      const lp = queuedOpen
+        ? '<span style="color:var(--koth);">at open</span>'
+        : ((o.LimitPrice != null) ? '₱' + Number(o.LimitPrice).toFixed(2) : '—');
       return '<tr>' +
         '<td style="font-weight:700;color:var(--koth);">' + (o.Stock || '') + '</td>' +
-        '<td style="color:' + sideColor + ';font-weight:700;">' + side + '</td>' +
+        '<td style="color:' + sideColor + ';font-weight:700;">' + side + (queuedOpen ? ' <span style="color:var(--gray);font-weight:400;">(queued)</span>' : '') + '</td>' +
         '<td>' + lp + '</td>' +
         '<td>' + (o.Shares || 0).toLocaleString() + '</td>' +
         '<td style="color:var(--gray);font-size:0.7rem;">' + placed + '</td>' +
@@ -2837,7 +2858,7 @@ async function loadOrders() {
 
 async function cancelLimitOrder(orderId) {
   if (!orderId) return;
-  if (!confirm('Cancel this resting limit order? A buy order refunds your reserved cash.')) return;
+  if (!confirm('Cancel this order? Nothing is charged until an order actually fills.')) return;
   try {
     const res = await gasPost({ action: 'cancel_limit', playerID: currentUser.playerID, orderId });
     if (res.success) {
