@@ -539,6 +539,12 @@ body{
 .lb-row.top3-row{background:linear-gradient(90deg,rgba(224,138,60,0.08),transparent 70%);border-left:3px solid var(--bronze);}
 .lb-row.top3-row .lb-username{color:var(--bronze);}
 @keyframes crownPulse{0%,100%{box-shadow:inset 0 0 0 0 rgba(255,210,63,0.12)}50%{box-shadow:inset 0 0 28px 0 rgba(255,210,63,0.1)}}
+/* Royalty framing: top 10 get a square gold border, top 3 a brighter elite border */
+.lb-row.royal-row{border:1px solid rgba(212,175,55,0.38);border-radius:10px;margin:5px 10px;}
+.lb-row.royal-row .lb-elo{color:var(--koth);}
+.lb-row.elite-row{border:2px solid var(--koth);border-radius:11px;margin:7px 10px;box-shadow:0 0 22px rgba(212,175,55,0.22);}
+.lb-row.elite-row .lb-elo{color:var(--koth);}
+.lb-row.crown-row.elite-row{border-color:var(--crown);box-shadow:0 0 26px rgba(255,210,63,0.3);}
 
 /* ── TIER BADGES (gem chips) ── */
 .tier-badge{font-family:'JetBrains Mono',monospace;font-size:0.58rem;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;text-transform:uppercase;border:1px solid transparent;}
@@ -847,6 +853,72 @@ body{
   .lp-footer { position:static; transform:none; margin-top:24px; }
   .lp-title { font-size:clamp(3rem,16vw,4.5rem); }
 }
+/* ============================================================
+   MOBILE (≤768px) — additive only; desktop layout untouched
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Single column: main fills width, sidebar becomes a bottom tab bar */
+  .app-body { grid-template-columns: 1fr; }
+  .main { padding-bottom: 76px; } /* clear the fixed bottom nav */
+  .view { padding: 16px 13px; }
+  .view-title { font-size: 1.9rem; margin-bottom: 14px; }
+
+  /* Topbar compact */
+  .topbar { padding: 0 12px; height: 50px; }
+  .topbar-logo { font-size: 1.15rem; letter-spacing: 1px; }
+  .topbar-right { gap: 8px; }
+  .user-rank-badge { padding: 5px 9px; gap: 7px; }
+  .rank-elo { display: none; }
+  .topbar-btn { padding: 5px 9px; font-size: 0.66rem; }
+
+  /* Sidebar -> fixed bottom tab bar */
+  .sidebar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    flex-direction: row; padding: 0; height: 62px;
+    border-right: none; border-top: 1px solid var(--border2);
+    z-index: 300; overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    justify-content: space-between;
+  }
+  .sidebar .nav-section { display: none; }
+  .nav-item {
+    flex: 1 0 auto; flex-direction: column; gap: 3px;
+    justify-content: center; padding: 8px 11px;
+    border-left: none; border-top: 2px solid transparent;
+    font-size: 0.62rem; white-space: nowrap; text-align: center;
+  }
+  .nav-item.active { border-left-color: transparent; border-top-color: var(--koth); box-shadow: none; }
+  .nav-item .nav-icon { font-size: 1.05rem; width: auto; }
+
+  /* Stack the multi-column blocks */
+  .stats-row { grid-template-columns: 1fr !important; gap: 10px; margin-bottom: 14px; }
+  .grid-stackable { grid-template-columns: 1fr !important; }
+  #dash-koth { grid-template-columns: 1fr !important; }
+
+  /* Cards a touch tighter */
+  .card { padding: 15px; border-radius: 12px; }
+
+  /* Tables scroll horizontally instead of overflowing */
+  .data-table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  .data-table th, .data-table td { padding: 9px 10px; font-size: 0.74rem; }
+
+  /* Leaderboard rows: tighter columns, keep the royalty framing */
+  .lb-head { grid-template-columns: 44px 1fr auto; padding: 0 10px 8px; }
+  .lb-row { grid-template-columns: 44px 1fr auto; padding: 11px 10px; }
+  .lb-row.royal-row, .lb-row.elite-row, .lb-row.crown-row.elite-row { margin: 5px 6px; }
+  .lb-rank.top1 { font-size: 1.4rem; }
+  .lb-school { font-size: 0.62rem; }
+
+  /* Floating chat / live-trades: dock above the bottom nav, side by side, slim */
+  .float-panel { bottom: 70px; width: 47vw; }
+  .float-panel.right { right: 8px; }
+  .float-panel.left { left: 8px; right: auto; }
+  .float-panel-body.open { height: 200px; }
+  .float-panel-title { font-size: 0.6rem; }
+
+  /* Trade ticker a bit shorter */
+  .ticker-wrap { height: 30px; }
+}
 </style>
 </head>
 <body>
@@ -1074,7 +1146,7 @@ body{
       <!-- TRADE -->
       <div class="view" id="view-trade">
         <div class="view-title">Place a Trade</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="grid-stackable" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div class="card">
             <div class="card-title">Order</div>
             <div class="trade-grid">
@@ -1157,7 +1229,7 @@ body{
         <div class="view-title">King of the Hill</div>
         <div class="card" style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:2px;">TOP 10 = KOTH · UPDATED DAILY AT 3:30PM</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:2px;">TOP 3 CONTEND FOR THE CROWN · TOP 10 = ROYALTY</div>
             <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);" id="lb-updated">—</div>
           </div>
           <div class="lb-head">
@@ -1172,7 +1244,7 @@ body{
       <!-- LEAGUES -->
       <div class="view" id="view-leagues">
         <div class="view-title">Leagues</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+        <div class="grid-stackable" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
           <div class="card">
             <div class="card-title">Create a League</div>
             <div class="trade-input-group">
@@ -1244,7 +1316,7 @@ body{
       <!-- PROFILE -->
       <div class="view" id="view-profile">
         <div class="view-title">My Profile</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="grid-stackable" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div class="card">
             <div class="card-title">Rank & ELO</div>
             <div style="text-align:center;padding:20px 0;">
@@ -1723,7 +1795,8 @@ function renderLeaderboard() {
   el.innerHTML = sorted.map((p, i) => {
     const tier = getTier(p.ELO || 0);
     const isCrown = i === 0;
-    const isKOTH = i < 10;
+    const isTop3 = i < 3;       // the three potential Kings — wear the KOTH badge
+    const isTop10 = i < 10;     // royalty — framed border
     const retPct = (p.TotalReturnPct || 0).toFixed(2);
     const retCls = p.TotalReturnPct >= 0 ? 'green' : 'red';
     const retSign = p.TotalReturnPct >= 0 ? '+' : '';
@@ -1731,11 +1804,11 @@ function renderLeaderboard() {
     const schoolText = p.School || 'Unknown School';
     const username = p.Username || 'Unknown';
     const rankLabel = isCrown ? '👑' : '#' + (i + 1);
-    const rowClass = isCrown ? 'crown-row' : i === 1 ? 'top2-row' : i === 2 ? 'top3-row' : isKOTH ? 'koth-row' : '';
-    const rankClass = isCrown ? 'top1' : i < 3 ? 'top3' : '';
+    const rowClass = isCrown ? 'crown-row elite-row' : isTop3 ? 'elite-row' : isTop10 ? 'royal-row' : '';
+    const rankClass = isCrown ? 'top1' : isTop3 ? 'top3' : '';
     const elo = (p.ELO || 0).toLocaleString();
     const avatarLetter = username.charAt(0).toUpperCase();
-    const kothBadge = isKOTH ? '<span class="tier-badge tb-koth" style="font-size:0.48rem;padding:2px 7px;">KOTH</span>' : '';
+    const kothBadge = isTop3 ? '<span class="tier-badge tb-koth" style="font-size:0.48rem;padding:2px 7px;">KOTH</span>' : '';
     const reportBtn = p.IsBot ? '' : '<button onclick="reportUser(\'' + username + '\')" style="background:none;border:none;color:var(--gray2);cursor:pointer;font-size:0.72rem;" title="Report">🚩</button>';
     const trash = p.StatusMessage ? '<span class="status-bubble" title="' + p.StatusMessage + '">' + p.StatusMessage + '</span>' : '';
     return '<div class="lb-row ' + rowClass + '">' +
