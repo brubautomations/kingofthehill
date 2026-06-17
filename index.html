@@ -546,6 +546,38 @@ body{
 .lb-row.elite-row .lb-elo{color:var(--koth);}
 .lb-row.crown-row.elite-row{border-color:var(--crown);box-shadow:0 0 26px rgba(255,210,63,0.3);}
 
+/* ── Rank spectacle: flowing animated borders, intensity by rank ── */
+@property --flameAngle { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+@keyframes flameSpin { to { --flameAngle:360deg; } }
+@keyframes kingGlow {
+  0%,100%{ box-shadow:0 0 20px rgba(255,90,0,0.45),0 0 40px rgba(255,210,63,0.28); }
+  50%    { box-shadow:0 0 30px rgba(255,120,0,0.65),0 0 56px rgba(255,210,63,0.42); }
+}
+@keyframes royalShimmer {
+  0%,100%{ box-shadow:0 0 0 rgba(212,175,55,0); }
+  50%    { box-shadow:0 0 16px rgba(212,175,55,0.2); }
+}
+/* #1 — the King: flowing flame ring + flicker glow (sits on top of crown styling) */
+.lb-row.king-row{ position:relative; border-color:transparent; animation:kingGlow 1.9s ease-in-out infinite, crownPulse 2.6s ease-in-out infinite; }
+.lb-row.king-row::before{
+  content:''; position:absolute; inset:-2px; border-radius:13px; padding:2px; pointer-events:none; z-index:-1;
+  background:conic-gradient(from var(--flameAngle), #ff4d00, #ffb300, #ffd23f, #ff7a00, #ff4d00);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite:exclude;
+  animation:flameSpin 3s linear infinite;
+}
+/* #2–3 — Contenders: flowing gold ring, calmer and cooler than the King */
+.lb-row.contender-row{ position:relative; border-color:transparent; }
+.lb-row.contender-row::before{
+  content:''; position:absolute; inset:-2px; border-radius:13px; padding:2px; pointer-events:none; z-index:-1;
+  background:conic-gradient(from var(--flameAngle), var(--gold), #f4e08a, var(--crown), #b8901f, var(--gold));
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite:exclude;
+  animation:flameSpin 6s linear infinite;
+}
+/* #4–10 — Royalty: gentle gold shimmer */
+.lb-row.royal-row{ animation:royalShimmer 3.6s ease-in-out infinite; }
+
 /* ── TIER BADGES (gem chips) ── */
 .tier-badge{font-family:'JetBrains Mono',monospace;font-size:0.58rem;font-weight:700;letter-spacing:1px;padding:4px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;text-transform:uppercase;border:1px solid transparent;}
 .tb-dirt{color:#241803;background:linear-gradient(135deg,#cf9a45,#8a6320);}
@@ -569,6 +601,22 @@ body{
 .orb-platinum{background:radial-gradient(circle at 35% 30%,#aef3ff,#23b6da);color:#56dfff;box-shadow:0 0 34px rgba(86,223,255,0.5);}
 .orb-diamond{background:radial-gradient(circle at 35% 30%,#bdf2ff,#2fb9e6);color:#6fe3ff;box-shadow:0 0 40px rgba(111,227,255,0.6);}
 .orb-obsidian{background:radial-gradient(circle at 35% 30%,#c98bff,#5a23c4);color:#b06cff;box-shadow:0 0 44px rgba(124,60,255,0.65);animation:pulse-obsidian 2.4s ease-in-out infinite;}
+
+/* ── Profile badge life: animation escalates by tier ── */
+.tier-orb .orb-glyph{position:relative;z-index:2;}
+.tier-orb::before{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;z-index:1;}
+@keyframes orbSheen{0%{background-position:-60% -60%;}60%,100%{background-position:160% 160%;}}
+@keyframes orbDrip{0%{background-position:50% -40%;}100%{background-position:50% 140%;}}
+@keyframes orbPrism{to{filter:hue-rotate(360deg);}}
+@keyframes orbAura{0%,100%{opacity:0.3;transform:scale(1);}50%{opacity:0.75;transform:scale(1.14);}}
+.orb-dirt::before{background:linear-gradient(180deg,transparent 38%,rgba(45,30,12,0.55) 54%,rgba(30,20,8,0.25) 68%,transparent 82%);background-size:100% 230%;animation:orbDrip 5.5s ease-in infinite;}
+.orb-bronze::before{background:linear-gradient(115deg,transparent 42%,rgba(255,220,170,0.30) 50%,transparent 58%);background-size:250% 250%;animation:orbSheen 6s ease-in-out infinite;}
+.orb-silver::before{background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,0.50) 50%,transparent 60%);background-size:250% 250%;animation:orbSheen 4.6s ease-in-out infinite;}
+.orb-gold::before{background:linear-gradient(115deg,transparent 36%,rgba(255,240,170,0.62) 50%,transparent 64%);background-size:250% 250%;animation:orbSheen 3.4s ease-in-out infinite;}
+.orb-platinum::before{background:linear-gradient(115deg,transparent 38%,rgba(200,250,255,0.60) 50%,transparent 62%);background-size:250% 250%;animation:orbSheen 2.6s linear infinite;}
+.orb-diamond{animation:orbPrism 6s linear infinite;}
+.orb-diamond::before{background:linear-gradient(115deg,transparent 34%,rgba(255,255,255,0.72) 50%,transparent 66%);background-size:250% 250%;animation:orbSheen 2.1s ease-in-out infinite;}
+.orb-obsidian::after{animation:orbAura 2.4s ease-in-out infinite;}
 
 /* ── SHARE CARD ── */
 #share-canvas{display:none;}
@@ -1804,7 +1852,7 @@ function renderLeaderboard() {
     const schoolText = p.School || 'Unknown School';
     const username = p.Username || 'Unknown';
     const rankLabel = isCrown ? '👑' : '#' + (i + 1);
-    const rowClass = isCrown ? 'crown-row elite-row' : isTop3 ? 'elite-row' : isTop10 ? 'royal-row' : '';
+    const rowClass = isCrown ? 'crown-row elite-row king-row' : isTop3 ? 'elite-row contender-row' : isTop10 ? 'royal-row' : '';
     const rankClass = isCrown ? 'top1' : isTop3 ? 'top3' : '';
     const elo = (p.ELO || 0).toLocaleString();
     const avatarLetter = username.charAt(0).toUpperCase();
