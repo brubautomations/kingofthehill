@@ -851,9 +851,26 @@ body{
 .lp-title {
   font-family:'Bebas Neue',sans-serif; font-size:clamp(3.4rem,8vw,6.2rem); line-height:0.86;
   letter-spacing:2px; color:var(--white); text-shadow:0 6px 30px rgba(0,0,0,0.7);
-  animation:lpFadeUp 0.9s 0.1s ease both;
+  animation:lpFadeUp 0.9s 0.1s ease both; position:relative;
 }
+.lp-title::before{
+  content:''; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:115%; height:150%; z-index:-1; pointer-events:none;
+  background:radial-gradient(ellipse at center, rgba(212,175,55,0.22), rgba(0,230,118,0.10) 45%, transparent 70%);
+  filter:blur(22px); animation:lpAura 4.2s ease-in-out infinite;
+}
+@keyframes lpAura{0%,100%{opacity:0.55; transform:translate(-50%,-50%) scale(0.96);}50%{opacity:1; transform:translate(-50%,-50%) scale(1.06);}}
 .lp-title .hill { color:var(--green); text-shadow:0 0 36px rgba(0,230,118,0.55); }
+
+/* Rotating player quote card */
+.lp-quote{ display:flex; gap:11px; align-items:flex-start; padding:13px 14px; border:1px solid var(--border2); border-radius:11px; background:rgba(212,175,55,0.05); transition:opacity 0.26s ease; }
+.lp-quote-av{ flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:1.15rem; }
+.lp-quote-text{ font-size:0.8rem; line-height:1.45; color:var(--white); font-style:italic; }
+.lp-quote-by{ font-family:'JetBrains Mono',monospace; font-size:0.58rem; letter-spacing:0.5px; color:var(--gold); margin-top:6px; }
+
+/* Landing ticker (fixed bottom; hidden in-app because #page-landing is hidden) */
+.lp-ticker{ position:fixed; bottom:0; left:0; right:0; z-index:60; }
+body:not(.in-app) .float-panel{ display:none; }
 .lp-tagline {
   font-family:'Inter',sans-serif; font-size:clamp(0.85rem,1.6vw,1rem); color:var(--text);
   margin:18px 0 26px; line-height:1.6; text-shadow:0 2px 12px rgba(0,0,0,0.8);
@@ -886,7 +903,7 @@ body{
 }
 .lp-journey span { color:var(--text); } .lp-journey i { color:var(--green); font-style:normal; }
 .lp-footer {
-  position:absolute; bottom:16px; left:50%; transform:translateX(-50%); z-index:4;
+  position:absolute; bottom:44px; left:50%; transform:translateX(-50%); z-index:61;
   font-family:'JetBrains Mono',monospace; font-size:0.55rem; color:#3a4456; letter-spacing:1px; white-space:nowrap;
 }
 .lp-footer a { color:#4a576b; text-decoration:none; } .lp-footer a:hover { color:var(--green); }
@@ -995,6 +1012,8 @@ body{
     </div>
     <div class="lp-panel-label" style="margin-top:0;">Top Movers</div>
     <div id="lp-movers"><div class="lp-loading">Loading market…</div></div>
+    <div class="lp-panel-label">From the Hill</div>
+    <div id="lp-quote" class="lp-quote"></div>
   </div>
 
   <div class="lp-panel lp-right">
@@ -1025,6 +1044,12 @@ body{
   </div>
 
   <div class="lp-footer">Powered by <a href="https://brubai.net/" target="_blank">BRUB AI</a></div>
+
+  <div class="ticker-wrap lp-ticker">
+    <div class="ticker-move" id="pse-ticker-landing">
+      <div class="ticker-item"><span class="ticker-sym">PSEi</span><span class="ticker-price">—</span><span class="ticker-change">—</span></div>
+    </div>
+  </div>
 </div>
 
 <!-- Auth handled directly on landing via Google Sign In -->
@@ -1624,6 +1649,7 @@ function logout() {
   if (window.google && google.accounts) {
     google.accounts.id.disableAutoSelect();
   }
+  document.body.classList.remove('in-app');
   document.getElementById('page-landing').style.display = 'flex';
   document.getElementById('page-app').style.display = 'none';
   initLanding();
@@ -1633,6 +1659,7 @@ function logout() {
 // APP LOAD
 // ============================================================
 async function loadApp() {
+  document.body.classList.add('in-app');
   document.getElementById('page-landing').style.display = 'none';
   document.getElementById('page-app').style.display = 'flex';
   document.getElementById('page-app').classList.add('active');
@@ -2530,6 +2557,41 @@ function initLanding() {
   setLandingMarketStatus();
   setInterval(setLandingMarketStatus, 30000);
   initLandingParallax();
+  loadTicker('pse-ticker-landing');
+  initLandingQuotes();
+}
+
+// Rotating fake-but-believable player testimonials on the landing page
+const LP_QUOTES = [
+  { t: "This trading game is making me a tryhard just to get past Gold.", n: "Roberto", a: 18, s: "UP Manila" },
+  { t: "Nag-aral ako ng candlestick patterns para lang 'di bumagsak sa Silver. Worth it.", n: "Andrea", a: 20, s: "DLSU" },
+  { t: "I check my ELO more than my actual grades now. Send help.", n: "Miggy", a: 19, s: "Ateneo de Manila" },
+  { t: "Beat the index 3 days straight, tapos PSEi humbled me. Diamond someday.", n: "Kyla", a: 21, s: "UST" },
+  { t: "My port is red pero my rank is climbing. Make it make sense (it does).", n: "Paolo", a: 18, s: "Mapúa" },
+  { t: "Naglaro lang sana ako, ngayon may opinion na ako sa Fed rate cuts.", n: "Bea", a: 20, s: "UP Diliman" },
+  { t: "Cut my losers fast and my ELO thanked me. Lesson learned the hard way.", n: "Joshua", a: 22, s: "FEU" },
+  { t: "Nasa Bronze pa ako pero I will not rest until may korona ako.", n: "Trisha", a: 19, s: "PUP" }
+];
+const LP_AV_COLORS = ['#d4af37','#00e676','#9fe7ff','#ff8a3c','#c98bff','#ff6b9d'];
+function initLandingQuotes() {
+  const el = document.getElementById('lp-quote');
+  if (!el) return;
+  let i = Math.floor(Math.random() * LP_QUOTES.length);
+  const render = () => {
+    const q = LP_QUOTES[i % LP_QUOTES.length];
+    const color = LP_AV_COLORS[i % LP_AV_COLORS.length];
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.innerHTML =
+        '<div class="lp-quote-av" style="background:' + color + '22;border-color:' + color + ';color:' + color + ';">' + q.n.charAt(0) + '</div>' +
+        '<div class="lp-quote-body"><div class="lp-quote-text">“' + q.t + '”</div>' +
+        '<div class="lp-quote-by">— ' + q.n + ', ' + q.a + ' · ' + q.s + '</div></div>';
+      el.style.opacity = '1';
+    }, 260);
+    i++;
+  };
+  render();
+  setInterval(render, 5200);
 }
 
 async function loadLandingMarket() {
@@ -2626,7 +2688,8 @@ function initLandingParallax() {
 // ============================================================
 // PSE TICKER TAPE
 // ============================================================
-async function loadTicker() {
+async function loadTicker(targetId) {
+  targetId = targetId || 'pse-ticker';
   try {
     const stocks = ['JFC','ALI','SM','BDO','PLDT','MER','BPI','ICT','SMPH','GLO','MBT','AEV','URC','MEG','CNPF','DITO','GMA7','BLOOM','RLC','PGOLD'];
     let items = '';
@@ -2644,7 +2707,8 @@ async function loadTicker() {
     }
     if (items) {
       // Double for seamless loop
-      document.getElementById('pse-ticker').innerHTML = items + items;
+      const tEl = document.getElementById(targetId);
+      if (tEl) tEl.innerHTML = items + items;
     }
   } catch(e) {}
 }
