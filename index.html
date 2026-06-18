@@ -757,6 +757,7 @@ body{
 
 /* CHATROOM */
 .chat-messages{padding:8px 14px;display:flex;flex-direction:column;gap:6px;}
+#chat-body{display:flex;flex-direction:column;overflow:hidden;}
 .chat-msg{background:var(--bg3);border-radius:8px;padding:6px 10px;}
 .chat-msg-user{font-family:'JetBrains Mono',monospace;font-size:0.58rem;font-weight:700;color:var(--koth);margin-bottom:2px;}
 .chat-msg-text{font-size:0.72rem;color:var(--white);line-height:1.4;}
@@ -959,6 +960,9 @@ body:not(.in-app) .float-panel{ display:none; }
   .stats-row { grid-template-columns: 1fr !important; gap: 10px; margin-bottom: 14px; }
   .grid-stackable { grid-template-columns: 1fr !important; }
   #dash-koth { grid-template-columns: 1fr !important; }
+  #dash-koth .kp-0 { order: 1; }
+  #dash-koth .kp-1 { order: 2; }
+  #dash-koth .kp-2 { order: 3; }
 
   /* Cards a touch tighter */
   .card { padding: 15px; border-radius: 12px; }
@@ -1844,7 +1848,7 @@ function renderKOTHQuick() {
     const medal = medals[idx];
     const color = medalColors[idx];
     const isGold = idx === 0;
-    return `<div style="text-align:center;padding:${isGold ? '24px 12px' : '12px'};background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid ${color}33;position:relative;">
+    return `<div class="kp-${idx}" style="text-align:center;padding:${isGold ? '24px 12px' : '12px'};background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid ${color}33;position:relative;">
       <div style="font-size:${isGold ? '2.2rem' : '1.6rem'};margin-bottom:8px;">${medal}</div>
       <div style="width:${isGold ? '52px' : '40px'};height:${isGold ? '52px' : '40px'};border-radius:50%;background:${color}22;border:2px solid ${color};display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:${isGold ? '1.2rem' : '0.9rem'};font-weight:700;color:${color};">${(p.Username||'?').charAt(0).toUpperCase()}</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:${isGold ? '1.1rem' : '0.9rem'};color:#fff;letter-spacing:1px;margin-bottom:2px;">${p.Username||'—'}</div>
@@ -3247,7 +3251,7 @@ document.addEventListener('click', function(e) {
       <button class="float-panel-toggle" id="chat-toggle">▲</button>
     </div>
     <div class="float-panel-body open" id="chat-body">
-      <div class="chat-messages" id="chat-messages" style="height:272px;overflow-y:auto;"></div>
+      <div class="chat-messages" id="chat-messages" style="flex:1;min-height:0;overflow-y:auto;"></div>
       <div class="chat-input-row">
         <input type="text" class="chat-input" id="chat-input" placeholder="Say something..." maxlength="200" onkeydown="if(event.key==='Enter')sendChatMessage()">
         <button class="chat-send" onclick="sendChatMessage()">SEND</button>
