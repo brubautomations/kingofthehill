@@ -957,6 +957,11 @@ body:not(.in-app) .float-panel{ display:none; }
   .lp-topbar { position:static; flex-direction:row; width:100%; max-width:420px; padding:0 4px 20px; align-self:center; }
   .lp-footer { position:static; transform:none; margin-top:24px; }
   .lp-title { font-size:clamp(3rem,16vw,4.5rem); }
+  /* Reframe the throne so its flames sit in view on tall phones (nudge the % if needed) */
+  .landing-bg-img { background-position: center 30%; }
+  /* Keep the season countdown from crowding the brand on small screens */
+  .lp-season-time { font-size:1.2rem; }
+  .lp-season-label { font-size:0.5rem; }
 }
 /* ============================================================
    MOBILE (≤768px) — additive only; desktop layout untouched
@@ -1026,7 +1031,23 @@ body:not(.in-app) .float-panel{ display:none; }
 
   /* Trade ticker a bit shorter */
   .ticker-wrap { height: 30px; }
+
+  /* Minimized float panels fully vanish on mobile (free the space); a launcher pops them back */
+  .float-panel.fp-min { display: none; }
+  .float-panel.left:not(.fp-min), .float-panel.right:not(.fp-min) { width: 92vw; left: 4vw; right: auto; }
+  .fp-launcher {
+    position: fixed; bottom: 70px; right: 8px; z-index: 210;
+    display: flex; gap: 8px; pointer-events: none;
+  }
+  .fp-launcher button {
+    pointer-events: auto; background: var(--bg3); color: var(--white);
+    border: 1px solid var(--border2); border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.5px;
+    padding: 9px 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.45); cursor: pointer;
+  }
+  .fp-launcher button:active { transform: scale(0.96); }
 }
+.fp-launcher { display: none; } /* hidden by default; only the mobile query shows it */
 </style>
 </head>
 <body>
@@ -1732,6 +1753,7 @@ async function loadApp() {
 
   renderDashboard();
   renderTopbar();
+  initFloatPanels();
   if (playerData) document.getElementById('trade-cash').textContent = '₱' + (playerData.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
 }
 
@@ -2708,7 +2730,8 @@ function updateLandingCountdown() {
   const diff = new Date(lpSeasonData.EndDate) - new Date();
   if (diff <= 0) { el.textContent = 'ENDED'; return; }
   const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
-  el.textContent = d + 'D ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const mobile = window.matchMedia('(max-width:768px)').matches;
+  el.textContent = d + 'D ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + (mobile ? '' : ':' + String(s).padStart(2,'0'));
 }
 
 function setLandingMarketStatus() {
@@ -2949,7 +2972,8 @@ function updateCountdown() {
   const mins = Math.floor((diff % 3600000) / 60000);
   const secs = Math.floor((diff % 60000) / 1000);
   const pad = n => String(n).padStart(2, '0');
-  el.innerHTML = `<div class="time">${days}D ${pad(hours)}:${pad(mins)}:${pad(secs)}</div><div class="label">BEFORE "${seasonData.SeasonName}" ENDS</div>`;
+  const mobile = window.matchMedia('(max-width:768px)').matches;
+  el.innerHTML = `<div class="time">${days}D ${pad(hours)}:${pad(mins)}${mobile ? '' : ':' + pad(secs)}</div><div class="label">BEFORE "${seasonData.SeasonName}" ENDS</div>`;
 }
 
 // ============================================================
@@ -2982,12 +3006,79 @@ async function loadSeasonHistory() {
 // FLOATING PANELS
 // ============================================================
 function togglePanel(panel) {
+  const isMobile = window.matchMedia('(max-width:768px)').matches;
+  const panelEl = document.getElementById(panel === 'trade-feed' ? 'trade-feed-panel' : 'chat-panel');
   const body = document.getElementById(panel === 'trade-feed' ? 'trade-feed-body' : 'chat-body');
   const toggle = document.getElementById(panel === 'trade-feed' ? 'trade-feed-toggle' : 'chat-toggle');
   const isOpen = body.classList.contains('open');
+
+  // Mobile: minimizing an open panel hides it entirely and surfaces the launcher.
+  if (isMobile && isOpen) {
+    panelEl.classList.add('fp-min');
+    body.classList.remove('open'); body.classList.add('closed');
+    toggle.textContent = '▼';
+    updateLauncher();
+    return;
+  }
+
+  // Desktop (and any non-mobile path): original open/close behavior, unchanged.
   body.classList.toggle('open', !isOpen);
   body.classList.toggle('closed', isOpen);
   toggle.textContent = isOpen ? '▼' : '▲';
+}
+
+// Pop a minimized panel back up (from the mobile launcher). On mobile, opening one
+// minimizes the other so two panels never fight for the small screen.
+function openFloat(panel) {
+  const isMobile = window.matchMedia('(max-width:768px)').matches;
+  if (isMobile) {
+    const other = panel === 'chat' ? 'trade-feed' : 'chat';
+    const oEl = document.getElementById(other === 'trade-feed' ? 'trade-feed-panel' : 'chat-panel');
+    const oBody = document.getElementById(other === 'trade-feed' ? 'trade-feed-body' : 'chat-body');
+    const oTog = document.getElementById(other === 'trade-feed' ? 'trade-feed-toggle' : 'chat-toggle');
+    if (oEl) oEl.classList.add('fp-min');
+    if (oBody) { oBody.classList.remove('open'); oBody.classList.add('closed'); }
+    if (oTog) oTog.textContent = '▼';
+  }
+  const panelEl = document.getElementById(panel === 'trade-feed' ? 'trade-feed-panel' : 'chat-panel');
+  const body = document.getElementById(panel === 'trade-feed' ? 'trade-feed-body' : 'chat-body');
+  const toggle = document.getElementById(panel === 'trade-feed' ? 'trade-feed-toggle' : 'chat-toggle');
+  if (panelEl) panelEl.classList.remove('fp-min');
+  if (body) { body.classList.add('open'); body.classList.remove('closed'); }
+  if (toggle) toggle.textContent = '▲';
+  updateLauncher();
+}
+
+// Show launcher buttons only for panels currently minimized (mobile only).
+function updateLauncher() {
+  const launcher = document.getElementById('fp-launcher');
+  if (!launcher) return;
+  if (!window.matchMedia('(max-width:768px)').matches) { launcher.style.display = 'none'; return; }
+  const chatMin = document.getElementById('chat-panel').classList.contains('fp-min');
+  const tradeMin = document.getElementById('trade-feed-panel').classList.contains('fp-min');
+  const cbtn = launcher.querySelector('[data-fp="chat"]');
+  const tbtn = launcher.querySelector('[data-fp="trade-feed"]');
+  if (cbtn) cbtn.style.display = chatMin ? '' : 'none';
+  if (tbtn) tbtn.style.display = tradeMin ? '' : 'none';
+  launcher.style.display = (chatMin || tradeMin) ? 'flex' : 'none';
+}
+
+// On mobile, start both panels minimized so they don't eat the screen; launcher invites them back.
+// On desktop, do nothing — panels stay docked and open as before.
+function initFloatPanels() {
+  if (!window.matchMedia('(max-width:768px)').matches) {
+    const l = document.getElementById('fp-launcher'); if (l) l.style.display = 'none';
+    return;
+  }
+  ['chat', 'trade-feed'].forEach(p => {
+    const panelEl = document.getElementById(p === 'trade-feed' ? 'trade-feed-panel' : 'chat-panel');
+    const body = document.getElementById(p === 'trade-feed' ? 'trade-feed-body' : 'chat-body');
+    const toggle = document.getElementById(p === 'trade-feed' ? 'trade-feed-toggle' : 'chat-toggle');
+    if (panelEl) panelEl.classList.add('fp-min');
+    if (body) { body.classList.remove('open'); body.classList.add('closed'); }
+    if (toggle) toggle.textContent = '▼';
+  });
+  updateLauncher();
 }
 
 // ============================================================
@@ -3386,6 +3477,11 @@ document.addEventListener('click', function(e) {
         <button class="chat-send" onclick="sendChatMessage()">SEND</button>
       </div>
     </div>
+  </div>
+  <!-- MOBILE LAUNCHER — pops minimized panels back up -->
+  <div class="fp-launcher" id="fp-launcher" aria-label="Open panels">
+    <button type="button" data-fp="chat" onclick="openFloat('chat')">&#128172; CHAT</button>
+    <button type="button" data-fp="trade-feed" onclick="openFloat('trade-feed')">&#128200; TRADES</button>
   </div>
 
 </body>
