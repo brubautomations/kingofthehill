@@ -863,6 +863,34 @@ body{
 @keyframes lpAura{0%,100%{opacity:0.55; transform:translate(-50%,-50%) scale(0.96);}50%{opacity:1; transform:translate(-50%,-50%) scale(1.06);}}
 .lp-title .hill { color:var(--green); text-shadow:0 0 36px rgba(0,230,118,0.55); }
 
+/* ── Torch embers (rise from the throne-base flames) ── */
+.lp-embers{position:absolute; inset:0; z-index:2; pointer-events:none; overflow:hidden;}
+.ember-emitter{position:absolute; bottom:30%; width:60px; height:0;}
+.ember-left{left:37%;}
+.ember-right{left:61%;}
+.ember{position:absolute; bottom:0; border-radius:50%; opacity:0; will-change:transform,opacity;
+  background:radial-gradient(circle, #ffe39a 0%, #ff9d3c 55%, rgba(255,120,30,0) 72%);
+  box-shadow:0 0 6px 1px rgba(255,170,60,0.65);
+  animation:emberRise linear infinite;}
+@keyframes emberRise{
+  0%{opacity:0; transform:translate(0,0) scale(0.85);}
+  12%{opacity:1;}
+  72%{opacity:0.85;}
+  100%{opacity:0; transform:translate(var(--drift,0), -250px) scale(0.3);}
+}
+@media (max-width:920px){ .lp-embers{display:none;} }
+@media (prefers-reduced-motion: reduce){ .ember{animation:none; display:none;} }
+
+/* ── Landing sound toggle ── */
+.lp-sound{position:fixed; left:18px; bottom:56px; z-index:60; width:42px; height:42px; border-radius:50%;
+  border:1px solid rgba(255,255,255,0.15); background:rgba(10,12,16,0.7); color:var(--gold,#e6b450);
+  font-size:1rem; cursor:pointer; backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center;
+  transition:transform .15s, box-shadow .3s, color .2s;}
+.lp-sound:hover{transform:scale(1.08);}
+.lp-sound-prompt{animation:soundPulse 1.9s ease-in-out infinite;}
+@keyframes soundPulse{0%,100%{box-shadow:0 0 0 0 rgba(230,180,80,0.5);}50%{box-shadow:0 0 0 9px rgba(230,180,80,0);}}
+.lp-sound-on{color:var(--green,#1ED760); border-color:rgba(0,230,118,0.5);}
+
 /* Rotating player quote card */
 .lp-quote{ display:flex; gap:11px; align-items:flex-start; padding:13px 14px; border:1px solid var(--border2); border-radius:11px; background:rgba(212,175,55,0.05); transition:opacity 0.26s ease; }
 .lp-quote-av{ flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:1.15rem; }
@@ -996,6 +1024,12 @@ body:not(.in-app) .float-panel{ display:none; }
 <div id="page-landing" class="page active">
   <div class="landing-bg-img" id="landing-bg-img"></div>
   <div class="landing-scrim"></div>
+  <div class="lp-embers" aria-hidden="true">
+    <div class="ember-emitter ember-left" id="ember-left"></div>
+    <div class="ember-emitter ember-right" id="ember-right"></div>
+  </div>
+  <audio id="koth-music" loop preload="auto" src="assets/koth-theme.mp3"></audio>
+  <button class="lp-sound lp-sound-prompt" id="lp-sound" type="button" aria-label="Toggle music">&#128266;</button>
 
   <div class="lp-topbar">
     <div class="lp-brand">
@@ -2560,7 +2594,8 @@ function initLanding() {
   loadLandingSeason();
   setLandingMarketStatus();
   setInterval(setLandingMarketStatus, 30000);
-  initLandingParallax();
+  initEmbers();
+  initMusic();
   loadTicker('pse-ticker-landing');
   initLandingQuotes();
 }
@@ -2657,8 +2692,8 @@ function updateLandingCountdown() {
   if (!el || !lpSeasonData) return;
   const diff = new Date(lpSeasonData.EndDate) - new Date();
   if (diff <= 0) { el.textContent = 'ENDED'; return; }
-  const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000), m = Math.floor((diff%3600000)/60000);
-  el.textContent = d + 'D ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+  const d = Math.floor(diff/86400000), h = Math.floor((diff%86400000)/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+  el.textContent = d + 'D ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
 
 function setLandingMarketStatus() {
@@ -2674,18 +2709,52 @@ function setLandingMarketStatus() {
   txt.textContent = open ? 'MARKET OPEN' : 'MARKET CLOSED';
 }
 
-function initLandingParallax() {
-  const bg = document.getElementById('landing-bg-img');
-  if (!bg || window.matchMedia('(max-width:920px)').matches) return;
-  let raf = null;
-  window.addEventListener('mousemove', (e) => {
-    if (raf) return;
-    raf = requestAnimationFrame(() => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 24;
-      const y = (e.clientY / window.innerHeight - 0.5) * 24;
-      bg.style.transform = 'translate(' + (-x) + 'px,' + (-y) + 'px) scale(1.04)';
-      raf = null;
-    });
+function initEmbers() {
+  if (window.matchMedia('(max-width:920px)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  ['ember-left','ember-right'].forEach(id => {
+    const host = document.getElementById(id);
+    if (!host) return;
+    const N = 14; // embers per torch — raise/lower to taste
+    for (let i = 0; i < N; i++) {
+      const e = document.createElement('div');
+      e.className = 'ember';
+      const dur = 4 + Math.random() * 5;       // 4–9s rise
+      const delay = Math.random() * dur;       // staggered (negative = already mid-flight)
+      const drift = Math.random() * 60 - 30;   // -30..30px sideways sway
+      const left = Math.random() * 60;         // spread across the emitter
+      const size = 2 + Math.random() * 3;      // 2–5px
+      e.style.left = left + 'px';
+      e.style.width = e.style.height = size + 'px';
+      e.style.setProperty('--drift', drift + 'px');
+      e.style.animationDuration = dur + 's';
+      e.style.animationDelay = '-' + delay + 's';
+      host.appendChild(e);
+    }
+  });
+}
+
+// Login-page music. Default OFF (the button pulses to invite a tap — never ambushes a
+// library/classroom). Browsers block autoplay, so playback only starts on the user's click.
+function initMusic() {
+  const audio = document.getElementById('koth-music');
+  const btn = document.getElementById('lp-sound');
+  if (!audio || !btn) return;
+  audio.volume = 0.45;
+  let on = false;
+  btn.addEventListener('click', () => {
+    on = !on;
+    if (on) {
+      audio.play().then(() => {
+        btn.innerHTML = '&#128266;'; // 🔊
+        btn.classList.remove('lp-sound-prompt');
+        btn.classList.add('lp-sound-on');
+      }).catch(() => { on = false; }); // file missing / blocked → stay off, no error shown
+    } else {
+      audio.pause();
+      btn.innerHTML = '&#128263;'; // 🔇
+      btn.classList.remove('lp-sound-on');
+    }
   });
 }
 
