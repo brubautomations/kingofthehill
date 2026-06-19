@@ -891,6 +891,17 @@ body{
 @keyframes soundPulse{0%,100%{box-shadow:0 0 0 0 rgba(230,180,80,0.5);}50%{box-shadow:0 0 0 9px rgba(230,180,80,0);}}
 .lp-sound-on{color:var(--green,#1ED760); border-color:rgba(0,230,118,0.5);}
 
+/* ── "Entering the Hill" login flourish ── */
+.enter-flourish{position:fixed; inset:0; z-index:9999; pointer-events:none; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at center, rgba(212,175,55,0.38), rgba(0,0,0,0.88) 70%);
+  animation:efIn 0.45s ease both;}
+.enter-flourish.ef-out{animation:efOut 0.5s ease both;}
+.ef-crown{font-size:5.5rem; color:var(--gold,#e6b450); text-shadow:0 0 34px rgba(230,180,80,0.85); animation:efCrown 1s cubic-bezier(.2,.7,.3,1) both;}
+@keyframes efIn{from{opacity:0;}to{opacity:1;}}
+@keyframes efOut{from{opacity:1;}to{opacity:0;}}
+@keyframes efCrown{0%{transform:scale(0.4) translateY(10px); opacity:0;}45%{transform:scale(1.12) translateY(0); opacity:1;}100%{transform:scale(1); opacity:1;}}
+@media (prefers-reduced-motion: reduce){ .enter-flourish{display:none;} }
+
 /* Rotating player quote card */
 .lp-quote{ display:flex; gap:11px; align-items:flex-start; padding:13px 14px; border:1px solid var(--border2); border-radius:11px; background:rgba(212,175,55,0.05); transition:opacity 0.26s ease; }
 .lp-quote-av{ flex-shrink:0; width:34px; height:34px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:1.15rem; }
@@ -1688,6 +1699,8 @@ function logout() {
     google.accounts.id.disableAutoSelect();
   }
   document.body.classList.remove('in-app');
+  const _m = document.getElementById('koth-music'); if (_m) { _m.pause(); _m.currentTime = 0; }
+  resetSoundButton();
   document.getElementById('page-landing').style.display = 'flex';
   document.getElementById('page-app').style.display = 'none';
   initLanding();
@@ -1697,6 +1710,8 @@ function logout() {
 // APP LOAD
 // ============================================================
 async function loadApp() {
+  fadeOutMusic(1000);   // menu music gently fades as we enter the app
+  playEnterFlourish();  // brief gold crown flourish over the transition
   document.body.classList.add('in-app');
   document.getElementById('page-landing').style.display = 'none';
   document.getElementById('page-app').style.display = 'flex';
@@ -2715,6 +2730,7 @@ function initEmbers() {
   ['ember-left','ember-right'].forEach(id => {
     const host = document.getElementById(id);
     if (!host) return;
+    if (host.children.length) return; // guard: logout re-runs initLanding — don't stack embers
     const N = 14; // embers per torch — raise/lower to taste
     for (let i = 0; i < N; i++) {
       const e = document.createElement('div');
@@ -2736,26 +2752,70 @@ function initEmbers() {
 
 // Login-page music. Default OFF (the button pulses to invite a tap — never ambushes a
 // library/classroom). Browsers block autoplay, so playback only starts on the user's click.
+// Play state lives in the button's CSS class (lp-sound-on) so external code (the login fade)
+// can stop the music and keep the button in sync.
 function initMusic() {
   const audio = document.getElementById('koth-music');
   const btn = document.getElementById('lp-sound');
   if (!audio || !btn) return;
+  if (btn.dataset.bound) return; // guard: logout re-runs initLanding — bind the click once
+  btn.dataset.bound = '1';
   audio.volume = 0.45;
-  let on = false;
   btn.addEventListener('click', () => {
-    on = !on;
-    if (on) {
+    const playing = btn.classList.contains('lp-sound-on');
+    if (!playing) {
+      audio.volume = 0.45;
       audio.play().then(() => {
         btn.innerHTML = '&#128266;'; // 🔊
         btn.classList.remove('lp-sound-prompt');
         btn.classList.add('lp-sound-on');
-      }).catch(() => { on = false; }); // file missing / blocked → stay off, no error shown
+      }).catch(() => {}); // file missing / blocked → stay off, no error shown
     } else {
       audio.pause();
       btn.innerHTML = '&#128263;'; // 🔇
       btn.classList.remove('lp-sound-on');
     }
   });
+}
+
+// Reset the sound button to its default "off, pulsing-invite" state.
+function resetSoundButton() {
+  const btn = document.getElementById('lp-sound');
+  if (!btn) return;
+  btn.innerHTML = '&#128266;';
+  btn.classList.remove('lp-sound-on');
+  btn.classList.add('lp-sound-prompt');
+}
+
+// Gently fade the menu music out (used when entering the app). Restores volume + button after.
+function fadeOutMusic(ms) {
+  const audio = document.getElementById('koth-music');
+  if (!audio) return;
+  if (audio.paused) { resetSoundButton(); return; }
+  ms = ms || 1000;
+  const startVol = audio.volume || 0.45;
+  const steps = 20, dec = startVol / steps, iv = ms / steps;
+  const t = setInterval(() => {
+    audio.volume = Math.max(0, audio.volume - dec);
+    if (audio.volume <= 0.001) {
+      clearInterval(t);
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = startVol; // restore for next time
+      resetSoundButton();
+    }
+  }, iv);
+}
+
+// Brief "entering the throne room" flourish — gold flash + crown, ~1.2s, then removes itself.
+function playEnterFlourish() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const o = document.createElement('div');
+  o.className = 'enter-flourish';
+  o.innerHTML = '<div class="ef-crown">&#9812;</div>';
+  document.body.appendChild(o);
+  setTimeout(() => o.classList.add('ef-out'), 750);
+  setTimeout(() => o.remove(), 1300);
 }
 
 // ============================================================
