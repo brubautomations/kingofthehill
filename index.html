@@ -510,6 +510,23 @@ body{
 .trade-submit.sell{background:linear-gradient(135deg,#ff7a93,#e0294a);color:#fff;}
 .trade-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,230,118,0.3);}
 
+/* ── PSEi benchmark banner (the market everyone races) ── */
+.psei-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:linear-gradient(90deg, rgba(255,210,63,0.10), rgba(255,210,63,0) 78%);
+  border:1px solid var(--border2); border-left:3px solid var(--crown);
+  border-radius:10px; padding:11px 16px; margin-bottom:14px;}
+.psei-banner-label{font-family:'JetBrains Mono',monospace;font-size:0.54rem;font-weight:700;letter-spacing:2px;color:var(--gray);line-height:1.5;}
+.psei-banner-right{display:flex;align-items:baseline;gap:10px;white-space:nowrap;}
+.psei-name{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;letter-spacing:1px;color:var(--crown);}
+.psei-price{font-family:'JetBrains Mono',monospace;font-size:1rem;font-weight:700;color:var(--white);}
+.psei-change{font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;color:var(--gray);}
+.psei-change.up{color:var(--green);} .psei-change.down{color:var(--red);}
+@media (max-width:768px){
+  .psei-banner{padding:10px 13px;}
+  .psei-banner-label{font-size:0.48rem;letter-spacing:1px;}
+  .psei-name{font-size:1.15rem;} .psei-price{font-size:0.9rem;} .psei-change{font-size:0.74rem;}
+}
+
 /* ── LEADERBOARD (ranked ladder) ── */
 .lb-head{display:grid;grid-template-columns:64px 1fr 190px;padding:0 18px 10px;border-bottom:1px solid var(--border);}
 .lb-head span{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--gray);letter-spacing:1px;text-transform:uppercase;}
@@ -1377,6 +1394,14 @@ body:not(.in-app) .float-panel{ display:none; }
       <!-- LEADERBOARD -->
       <div class="view" id="view-leaderboard">
         <div class="view-title">King of the Hill</div>
+        <div class="psei-banner" id="psei-banner">
+          <div class="psei-banner-label">THE MARKET — BEAT IT TO CLIMB</div>
+          <div class="psei-banner-right">
+            <span class="psei-name">PSEi</span>
+            <span class="psei-price" id="psei-price">—</span>
+            <span class="psei-change" id="psei-change">—</span>
+          </div>
+        </div>
         <div class="card" style="margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:2px;">TOP 3 CONTEND FOR THE CROWN · TOP 10 = ROYALTY</div>
@@ -1757,6 +1782,8 @@ async function loadApp() {
   startPortfolioRefresh();
   loadChatMessages();
   loadSeasonCountdown();
+  loadPSEi();
+  setInterval(loadPSEi, 60000);
 
   renderDashboard();
   renderTopbar();
@@ -2952,6 +2979,26 @@ async function saveStatusMessage() {
   } catch(e) {
     showToast('error', 'Error', 'Connection failed.');
   }
+}
+
+// ============================================================
+// PSEi BENCHMARK (the market players race)
+// ============================================================
+async function loadPSEi() {
+  try {
+    const res = await gasGet({ action: 'get_psei' });
+    if (!res || !res.success || !(res.close > 0)) return;
+    const priceEl = document.getElementById('psei-price');
+    const changeEl = document.getElementById('psei-change');
+    if (priceEl) priceEl.textContent = Number(res.close).toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (changeEl) {
+      const pct = Number(res.changePct) || 0;
+      const arrow = pct > 0 ? '▲' : pct < 0 ? '▼' : '·';
+      changeEl.textContent = arrow + ' ' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+      changeEl.classList.remove('up', 'down');
+      changeEl.classList.add(pct >= 0 ? 'up' : 'down');
+    }
+  } catch (e) {}
 }
 
 // ============================================================
