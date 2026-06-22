@@ -7,6 +7,7 @@
 <meta name="google-signin-client_id" content="501217452261-dnphdo1abncnt5nhqcukvut952h0shjf.apps.googleusercontent.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   /* Arena base — deep navy-black, richer than flat black */
@@ -3179,39 +3180,123 @@ function startTradeFeed() {
 }
 
 // ============================================================
-// GLOBAL CHATROOM (localStorage only)
+// GLOBAL CHATROOM (Supabase Realtime)
 // ============================================================
-function loadChatMessages() {
-  const msgs = JSON.parse(localStorage.getItem('koth_chat') || '[]');
+// ⬇⬇⬇  PASTE YOUR TWO SUPABASE VALUES HERE  ⬇⬇⬇
+// From Supabase → Settings → API Keys:
+const SUPABASE_URL = 'https://csomhbisicbkweoxulzk.supabase.co';        // looks like https://xxxxx.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzb21oYmlzaWNia3dlb3h1bHprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNjU1MDMsImV4cCI6MjA5NzY0MTUwM30.oFoDJY_jtHwDTlFslWfm88NaqGbtEjg9f3XP6DSsS5I'; // the long "anon / public" key
+// ⬆⬆⬆  (leave everything else below as-is)  ⬆⬆⬆
+
+let chatClient = null;
+let chatReady = false;
+let chatLastSend = 0;
+const CHAT_COOLDOWN_MS = 2500;  // min gap between a player's messages (anti-spam)
+const CHAT_MAX_LEN = 200;
+const CHAT_BLACKLIST = ['fuck','shit','bitch','cunt','nigger','nigga','faggot','retard','whore',
+  'puta','tangina','putangina','gago','pekpek','kantot','rape','nazi','hitler','porn'];
+
+// Escape user text before it ever touches innerHTML — a real multi-user chat MUST do this,
+// or one user could inject script/markup that runs in everyone else's browser.
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function chatStatus(msg) {
   const el = document.getElementById('chat-messages');
-  if (msgs.length === 0) {
+  if (el) el.innerHTML = '<div style="text-align:center;padding:20px;font-family:monospace;font-size:0.62rem;color:var(--gray);">' + escapeHtml(msg) + '</div>';
+}
+
+// Entry point (called from loadApp). Inits the client once, loads recent messages,
+// subscribes to realtime. FULLY GUARDED: if Supabase is down, keys are blank, or the CDN
+// is blocked, chat just shows "unavailable" — the rest of KOTH is never affected.
+async function loadChatMessages() {
+  try {
+    if (typeof supabase === 'undefined' || SUPABASE_URL.indexOf('PASTE_') === 0) {
+      chatStatus('Chat unavailable right now.');
+      return;
+    }
+    if (!chatClient) chatClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const { data, error } = await chatClient
+      .from('messages')
+      .select('username,text,created_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) { chatStatus('Chat unavailable right now.'); return; }
+
+    renderChatMessages((data || []).reverse()); // oldest-first for display
+    chatReady = true;
+
+    // Realtime push — new messages appear instantly for everyone. Bind only once.
+    if (!chatClient._kothSubscribed) {
+      chatClient._kothSubscribed = true;
+      chatClient.channel('koth-chat')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+          payload => appendChatMessage(payload.new))
+        .subscribe();
+    }
+  } catch (e) {
+    chatStatus('Chat unavailable right now.');
+  }
+}
+
+function chatRowHtml(m) {
+  const t = m.created_at ? new Date(m.created_at).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' }) : '';
+  return '<div class="chat-msg">' +
+    '<div class="chat-msg-user">' + escapeHtml(m.username) + '</div>' +
+    '<div class="chat-msg-text">' + escapeHtml(m.text) + '</div>' +
+    '<div class="chat-msg-time">' + escapeHtml(t) + '</div>' +
+  '</div>';
+}
+
+function renderChatMessages(msgs) {
+  const el = document.getElementById('chat-messages');
+  if (!el) return;
+  if (!msgs || msgs.length === 0) {
     el.innerHTML = '<div style="text-align:center;padding:20px;font-family:monospace;font-size:0.62rem;color:var(--gray);">No messages yet. Say hi!</div>';
     return;
   }
-  el.innerHTML = msgs.map(m => `<div class="chat-msg">
-    <div class="chat-msg-user">${m.user}</div>
-    <div class="chat-msg-text">${m.text}</div>
-    <div class="chat-msg-time">${m.time}</div>
-  </div>`).join('');
+  el.innerHTML = msgs.map(chatRowHtml).join('');
   el.scrollTop = el.scrollHeight;
 }
 
-function sendChatMessage() {
+function appendChatMessage(m) {
+  const el = document.getElementById('chat-messages');
+  if (!el) return;
+  if (!el.querySelector('.chat-msg')) el.innerHTML = ''; // clear the "no messages" placeholder
+  el.insertAdjacentHTML('beforeend', chatRowHtml(m));
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendChatMessage() {
   if (!currentUser) return;
   const input = document.getElementById('chat-input');
-  const text = input.value.trim();
+  if (!input) return;
+  let text = (input.value || '').trim();
   if (!text) return;
-  const msgs = JSON.parse(localStorage.getItem('koth_chat') || '[]');
-  msgs.push({
-    user: currentUser.username,
-    text: text,
-    time: new Date().toLocaleTimeString('en-PH', {hour:'2-digit', minute:'2-digit'})
-  });
-  // Keep last 50 messages
-  if (msgs.length > 50) msgs.shift();
-  localStorage.setItem('koth_chat', JSON.stringify(msgs));
+  if (!chatReady || !chatClient) { showToast('error', 'Chat', 'Chat is not available right now.'); return; }
+  if (text.length > CHAT_MAX_LEN) text = text.slice(0, CHAT_MAX_LEN);
+
+  // Anti-spam cooldown
+  const now = Date.now();
+  if (now - chatLastSend < CHAT_COOLDOWN_MS) { showToast('error', 'Slow down', 'Wait a moment before sending again.'); return; }
+
+  // Language filter on the message text
+  const lower = text.toLowerCase();
+  if (CHAT_BLACKLIST.some(w => lower.indexOf(w) !== -1)) { showToast('error', 'Blocked', "That message contains language that isn't allowed."); return; }
+
+  chatLastSend = now;
   input.value = '';
-  loadChatMessages();
+  try {
+    const { error } = await chatClient.from('messages').insert({ username: currentUser.username, text: text });
+    if (error) { showToast('error', 'Chat', 'Message failed to send.'); chatLastSend = 0; }
+    // Success: realtime echoes it back and appends it for everyone (including us).
+  } catch (e) {
+    showToast('error', 'Chat', 'Message failed to send.'); chatLastSend = 0;
+  }
 }
 
 // ============================================================
