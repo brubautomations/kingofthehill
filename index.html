@@ -849,6 +849,9 @@ body{
 }
 .lp-left  { left:38px;  animation:lpFadeUp 0.9s 0.15s ease both; }
 .lp-right { right:38px; animation:lpFadeUp 0.9s 0.3s ease both; }
+.lp-testi { left:38px; bottom:30px; top:auto; transform:none; animation:lpFadeUp 0.9s 0.45s ease both; }
+.lp-lbl-gain { color:var(--green); }
+.lp-lbl-lose { color:var(--red); }
 .lp-panel-label { font-family:'JetBrains Mono',monospace; font-size:0.56rem; letter-spacing:2px; color:var(--gray); text-transform:uppercase; margin:6px 0 10px; }
 .lp-psei { border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:12px; }
 .lp-psei-val { font-family:'Bebas Neue',sans-serif; font-size:2.1rem; color:var(--white); line-height:1; }
@@ -914,6 +917,8 @@ body{
 .lp-sound-prompt{animation:soundPulse 1.9s ease-in-out infinite;}
 @keyframes soundPulse{0%,100%{box-shadow:0 0 0 0 rgba(230,180,80,0.5);}50%{box-shadow:0 0 0 9px rgba(230,180,80,0);}}
 .lp-sound-on{color:var(--green,#1ED760); border-color:rgba(0,230,118,0.5);}
+.lp-song-title{position:fixed; left:70px; bottom:64px; z-index:60; font-family:'JetBrains Mono',monospace; font-size:0.62rem; letter-spacing:1px; color:var(--gold,#d4af37); opacity:0; transform:translateX(-6px); transition:opacity .4s ease, transform .4s ease; pointer-events:none; white-space:nowrap; text-shadow:0 1px 5px rgba(0,0,0,0.85);}
+.lp-song-title.show{opacity:1; transform:translateX(0);}
 
 /* ── "Entering the Hill" login flourish ── */
 .enter-flourish{position:fixed; inset:0; z-index:9999; pointer-events:none; display:flex; align-items:center; justify-content:center;
@@ -1087,6 +1092,7 @@ body:not(.in-app) .float-panel{ display:none; }
   </div>
   <audio id="koth-music" loop preload="auto" src="assets/koth-theme.mp3"></audio>
   <button class="lp-sound lp-sound-prompt" id="lp-sound" type="button" aria-label="Toggle music">&#128266;</button>
+  <div class="lp-song-title" id="lp-song-title" aria-hidden="true"></div>
 
   <div class="lp-topbar">
     <div class="lp-brand">
@@ -1105,9 +1111,14 @@ body:not(.in-app) .float-panel{ display:none; }
       <div class="lp-psei-val" id="lp-psei-val">—</div>
       <div class="lp-psei-chg" id="lp-psei-chg"></div>
     </div>
-    <div class="lp-panel-label" style="margin-top:0;">Top Movers</div>
-    <div id="lp-movers"><div class="lp-loading">Loading market…</div></div>
-    <div class="lp-panel-label">From the Hill</div>
+    <div class="lp-panel-label lp-lbl-gain" style="margin-top:0;">▲ Top Gainers</div>
+    <div id="lp-gainers"><div class="lp-loading">Loading market…</div></div>
+    <div class="lp-panel-label lp-lbl-lose">▼ Worst Losers</div>
+    <div id="lp-losers"><div class="lp-loading">…</div></div>
+  </div>
+
+  <div class="lp-panel lp-testi">
+    <div class="lp-panel-label" style="margin-top:0;">From the Hill</div>
     <div id="lp-quote" class="lp-quote"></div>
   </div>
 
@@ -2725,8 +2736,12 @@ async function loadLandingMarket() {
     }
   } catch(e) {}
 
-  // Top movers
-  const pool = ['JFC','ALI','SM','BDO','MER','BPI','ICT','SMPH','GLO','MBT','AEV','URC','CNPF','BLOOM','PGOLD','AC','JGS','MEG'];
+  // Movers pool = the current PSEi 30 constituents (the shortable universe).
+  // ⚠ The PSEi rebalances every February & August — refresh this list at the next
+  // rebalance (~August 2026). As of June 2026 these are the 30 index members:
+  const pool = ['AC','ACEN','AEV','ALI','AREIT','BDO','BPI','CBC','CNPF','CNVRG',
+    'DMC','EMI','GLO','GTCAP','ICT','JFC','JGS','LTG','MBT','MER',
+    'MONDE','PGOLD','PLUS','RCR','SCC','SM','SMC','SMPH','TEL','URC'];
   const rows = [];
   await Promise.all(pool.map(async sym => {
     try {
@@ -2734,14 +2749,18 @@ async function loadLandingMarket() {
       if (res.success && res.price > 0) rows.push({ sym, price: res.price, chg: res.changePct || 0 });
     } catch(e) {}
   }));
-  const el = document.getElementById('lp-movers');
-  if (!el) return;
-  if (!rows.length) { el.innerHTML = '<div class="lp-loading">Market data unavailable.</div>'; return; }
-  rows.sort((a,b) => b.chg - a.chg);
-  el.innerHTML = rows.slice(0,5).map(r => {
+  const gEl = document.getElementById('lp-gainers');
+  const lEl = document.getElementById('lp-losers');
+  if (!gEl || !lEl) return;
+  if (!rows.length) { gEl.innerHTML = '<div class="lp-loading">Market data unavailable.</div>'; lEl.innerHTML = ''; return; }
+  const rowHtml = r => {
     const up = r.chg >= 0;
     return `<div class="lp-row"><span class="sym">${r.sym}</span><span class="px">₱${r.price.toFixed(2)}</span><span class="chg ${up?'up':'down'}">${up?'+':''}${r.chg.toFixed(2)}%</span></div>`;
-  }).join('');
+  };
+  const gainers = rows.filter(r => r.chg > 0).sort((a,b) => b.chg - a.chg).slice(0,5);
+  const losers  = rows.filter(r => r.chg < 0).sort((a,b) => a.chg - b.chg).slice(0,5);
+  gEl.innerHTML = gainers.length ? gainers.map(rowHtml).join('') : '<div class="lp-loading">No gainers today.</div>';
+  lEl.innerHTML = losers.length  ? losers.map(rowHtml).join('')  : '<div class="lp-loading">No losers today.</div>';
 }
 
 async function loadLandingLeaders() {
@@ -2751,7 +2770,7 @@ async function loadLandingLeaders() {
     const res = await gasGet({ action: 'leaderboard' });
     const lb = (res.success && res.leaderboard) ? res.leaderboard : [];
     if (!lb.length) { el.innerHTML = '<div class="lp-loading">No rankings yet.</div>'; return; }
-    const top = [...lb].sort((a,b) => (b.ELO||0)-(a.ELO||0)).slice(0,5);
+    const top = [...lb].sort((a,b) => (b.ELO||0)-(a.ELO||0)).slice(0,10);
     el.innerHTML = top.map((p,i) => {
       const name = p.Username || '—';
       return `<div class="lp-lrow"><span class="lp-lrank">${i===0?'♔':(i+1)}</span><span class="lp-lname">${name}</span><span class="lp-lelo">${(p.ELO||0).toLocaleString()}</span></div>`;
@@ -2833,11 +2852,15 @@ function initMusic() {
         btn.innerHTML = '&#128266;'; // 🔊
         btn.classList.remove('lp-sound-prompt');
         btn.classList.add('lp-sound-on');
+        const st = document.getElementById('lp-song-title');
+        if (st) { st.textContent = '\u266A Audiomachine \u2014 Avow'; st.classList.add('show'); }
       }).catch(() => {}); // file missing / blocked → stay off, no error shown
     } else {
       audio.pause();
       btn.innerHTML = '&#128263;'; // 🔇
       btn.classList.remove('lp-sound-on');
+      const st = document.getElementById('lp-song-title');
+      if (st) st.classList.remove('show');
     }
   });
 }
@@ -2849,6 +2872,7 @@ function resetSoundButton() {
   btn.innerHTML = '&#128266;';
   btn.classList.remove('lp-sound-on');
   btn.classList.add('lp-sound-prompt');
+  const st = document.getElementById('lp-song-title'); if (st) st.classList.remove('show');
 }
 
 // Gently fade the menu music out (used when entering the app). Restores volume + button after.
