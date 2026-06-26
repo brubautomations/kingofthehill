@@ -917,8 +917,8 @@ body{
 .lp-sound-prompt{animation:soundPulse 1.9s ease-in-out infinite;}
 @keyframes soundPulse{0%,100%{box-shadow:0 0 0 0 rgba(230,180,80,0.5);}50%{box-shadow:0 0 0 9px rgba(230,180,80,0);}}
 .lp-sound-on{color:var(--green,#1ED760); border-color:rgba(0,230,118,0.5);}
-.lp-song-title{position:fixed; left:70px; bottom:64px; z-index:60; font-family:'JetBrains Mono',monospace; font-size:0.62rem; letter-spacing:1px; color:var(--gold,#d4af37); opacity:0; transform:translateX(-6px); transition:opacity .4s ease, transform .4s ease; pointer-events:none; white-space:nowrap; text-shadow:0 1px 5px rgba(0,0,0,0.85);}
-.lp-song-title.show{opacity:1; transform:translateX(0);}
+.lp-song-title{position:fixed; left:70px; bottom:64px; z-index:60; font-family:'JetBrains Mono',monospace; font-size:0.66rem; letter-spacing:1.5px; color:var(--gold,#d4af37); opacity:0; transform:translateX(-16px); transition:opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1); pointer-events:none; white-space:nowrap; text-shadow:0 1px 6px rgba(0,0,0,0.9);}
+.lp-song-title.show{opacity:1; transform:translateX(0); text-shadow:0 0 11px rgba(212,175,55,0.6), 0 1px 6px rgba(0,0,0,0.9);}
 
 /* ── "Entering the Hill" login flourish ── */
 .enter-flourish{position:fixed; inset:0; z-index:9999; pointer-events:none; display:flex; align-items:center; justify-content:center;
@@ -2844,6 +2844,23 @@ function initMusic() {
   if (btn.dataset.bound) return; // guard: logout re-runs initLanding — bind the click once
   btn.dataset.bound = '1';
   audio.volume = 0.45;
+  // Briefly announce the track when music starts, then let it fade on its own.
+  let titleTimer = null;
+  const announceTitle = () => {
+    const st = document.getElementById('lp-song-title');
+    if (!st) return;
+    clearTimeout(titleTimer);
+    st.textContent = '\u266A Audiomachine \u2014 Avow';
+    st.classList.remove('show');
+    void st.offsetWidth;            // reflow so the slide-in replays each time
+    st.classList.add('show');
+    titleTimer = setTimeout(() => st.classList.remove('show'), 4200); // hold ~4s, then fade out
+  };
+  const hideTitle = () => {
+    const st = document.getElementById('lp-song-title');
+    if (st) st.classList.remove('show');
+    clearTimeout(titleTimer);
+  };
   btn.addEventListener('click', () => {
     const playing = btn.classList.contains('lp-sound-on');
     if (!playing) {
@@ -2852,15 +2869,13 @@ function initMusic() {
         btn.innerHTML = '&#128266;'; // 🔊
         btn.classList.remove('lp-sound-prompt');
         btn.classList.add('lp-sound-on');
-        const st = document.getElementById('lp-song-title');
-        if (st) { st.textContent = '\u266A Audiomachine \u2014 Avow'; st.classList.add('show'); }
+        announceTitle();
       }).catch(() => {}); // file missing / blocked → stay off, no error shown
     } else {
       audio.pause();
       btn.innerHTML = '&#128263;'; // 🔇
       btn.classList.remove('lp-sound-on');
-      const st = document.getElementById('lp-song-title');
-      if (st) st.classList.remove('show');
+      hideTitle();
     }
   });
 }
