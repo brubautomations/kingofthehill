@@ -1231,6 +1231,8 @@ body:not(.in-app) .float-panel{ display:none; }
       <div class="ticker-item"><span class="ticker-sym">PSEi</span><span class="ticker-price">—</span><span class="ticker-change">—</span></div>
     </div>
   </div>
+  <!-- TOP AD BANNER (shows on every screen) -->
+  <a id="ad-top" href="#" target="_blank" rel="noopener" style="display:none;text-decoration:none;"></a>
   <!-- APP BODY -->
   <div class="app-body">
     <!-- SIDEBAR -->
@@ -1328,6 +1330,11 @@ body:not(.in-app) .float-panel{ display:none; }
         <div class="grid-stackable" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div class="card">
             <div class="card-title">Order</div>
+            <div class="trade-grid" style="margin-bottom:14px;">
+              <button class="trade-type-btn active" id="tmode-long" onclick="setTradeMode('long')">LONG</button>
+              <button class="trade-type-btn" id="tmode-short" onclick="setTradeMode('short')">SHORT</button>
+            </div>
+            <div id="long-panel">
             <div class="trade-grid">
               <button class="trade-side-btn buy active" id="tbtn-buy" onclick="setTradeSide('buy')">BUY</button>
               <button class="trade-side-btn sell" id="tbtn-sell" onclick="setTradeSide('sell')">SELL</button>
@@ -1357,6 +1364,32 @@ body:not(.in-app) .float-panel{ display:none; }
               <input type="text" id="trade-total" readonly placeholder="₱0.00">
             </div>
             <button class="trade-submit buy" id="trade-submit" onclick="openConfirm()">PLACE BUY ORDER</button>
+            </div><!-- /long-panel -->
+
+            <div id="short-panel" style="display:none;">
+              <div style="margin:0 0 13px;padding:9px 12px;border:1px solid var(--red);border-radius:6px;background:rgba(255,67,101,0.07);font-family:'JetBrains Mono',monospace;font-size:0.66rem;line-height:1.45;color:var(--red);">
+                A short profits when the price <strong>falls</strong>. Only PSEi index stocks can be shorted. Your short auto-covers if the price reaches its liquidation level.
+              </div>
+              <div class="trade-input-group">
+                <label>Stock — PSEi index only (type to search)</label>
+                <input type="text" id="short-stock" list="psei30-list" autocomplete="off" placeholder="e.g. SM, BDO, JFC" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();onShortStockInput()">
+                <datalist id="psei30-list"></datalist>
+              </div>
+              <div class="trade-input-group">
+                <label>Current Price (₱)</label>
+                <input type="text" id="short-price" readonly placeholder="—">
+              </div>
+              <div class="trade-input-group">
+                <label>Collateral (₱) — up to your available cash</label>
+                <input type="number" id="short-collateral" placeholder="0" oninput="onShortCollateralInput()">
+              </div>
+              <div id="short-liq" style="display:none;margin:-2px 0 14px;padding:10px 12px;border:1px solid var(--koth);border-radius:7px;background:rgba(212,175,55,0.08);font-family:'JetBrains Mono',monospace;font-size:0.68rem;line-height:1.55;color:var(--koth);"></div>
+              <button class="trade-submit" id="short-market-btn" onclick="submitShort('market')" style="background:var(--red);color:#fff;margin-bottom:10px;">SHORT MARKET — SELL DOWN NOW</button>
+              <button class="trade-submit" id="short-post-btn" onclick="submitShort('post')" style="background:var(--obsidian);color:#fff;">POST SHORT — UPTICK (RESTS)</button>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;line-height:1.5;color:var(--gray);margin-top:11px;">
+                <strong style="color:var(--red);">Short Market</strong> sells down at the live price right now. <strong style="color:var(--obsidian);">Post Short</strong> rests and opens on a tick <em>up</em> — for shorting a bounce into resistance.
+              </div>
+            </div><!-- /short-panel -->
           </div>
           <div>
             <div class="card" style="margin-bottom:14px;background:linear-gradient(160deg,var(--card),var(--bg2));">
@@ -1581,6 +1614,17 @@ body:not(.in-app) .float-panel{ display:none; }
 
     </div><!-- end main -->
   </div><!-- end app-body -->
+
+  <!-- BOTTOM-LEFT AD -->
+  <a id="ad-bottomleft" href="#" target="_blank" rel="noopener" style="display:none;position:fixed;left:16px;bottom:16px;z-index:50;text-decoration:none;border-radius:10px;overflow:hidden;border:1px solid var(--border2);box-shadow:0 6px 24px rgba(0,0,0,0.4);max-width:200px;"></a>
+
+  <!-- SPLASH AD (dashboard, every login) -->
+  <div id="ad-splash" class="modal-overlay" style="z-index:200;">
+    <div style="position:relative;max-width:520px;width:90%;">
+      <button onclick="closeSplashAd()" style="position:absolute;top:-14px;right:-14px;z-index:2;width:34px;height:34px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--white);font-size:1.1rem;cursor:pointer;line-height:1;">&times;</button>
+      <a id="ad-splash-link" href="#" target="_blank" rel="noopener" style="display:block;text-decoration:none;border-radius:12px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.6);"></a>
+    </div>
+  </div>
 </div><!-- end page-app -->
 
 <script>
@@ -1789,7 +1833,7 @@ async function loadApp() {
   ]);
   loadTicker();
   loadNewsTicker();
-  loadAd();
+  loadAds();
   startTradeFeed();
   startPortfolioRefresh();
   loadChatMessages();
@@ -1924,6 +1968,24 @@ async function renderHoldingsQuick() {
   const sortedHoldings = [...holdings].sort((a,b) => new Date(b.EntryDate||0) - new Date(a.EntryDate||0));
   tbody.innerHTML = sortedHoldings.map(h => {
     const livePrice = priceMap[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
+    if (h.Side === 'SHORT') {
+      const sh = h.Shares || 0;
+      const entry = h.EntryPrice || 0;
+      const collateral = h.Collateral || (entry * sh);
+      const pl = (entry - livePrice) * sh;
+      const plp = entry > 0 ? (((entry - livePrice) / entry) * 100).toFixed(2) : '0.00';
+      const cls = pl >= 0 ? 'green' : 'red';
+      const sign = pl >= 0 ? '+' : '';
+      totalPortValue += collateral + pl;     // short contribution = collateral + (entry-price)*shares
+      return `<tr>
+        <td>${h.Stock} <span style="font-size:0.55rem;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 4px;">SHORT</span></td>
+        <td>${sh.toLocaleString()}</td>
+        <td>₱${entry.toFixed(2)}</td>
+        <td>₱${livePrice.toFixed(2)}</td>
+        <td class="${cls}">${sign}₱${Math.abs(pl).toLocaleString('en',{minimumFractionDigits:2})}</td>
+        <td class="${cls}">${sign}${plp}%</td>
+      </tr>`;
+    }
     const pl = (livePrice - h.EntryPrice) * h.Shares;
     const plp = h.EntryPrice > 0 ? ((livePrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
     const cls = pl >= 0 ? 'green' : 'red';
@@ -2049,11 +2111,17 @@ async function renderPortfolio() {
     } catch(e) {}
   }));
 
-  // Live total value = cash + market value of open holdings + pending orders (reserved cost)
+  // Live total value = cash + market value of open holdings + pending orders (reserved cost).
+  // Shorts are valued as collateral + (entry - price) * shares (gain when price falls).
   let holdingsValue = 0;
   holdings.forEach(h => {
     const lp = livePrices[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
-    holdingsValue += lp * (h.Shares || 0);
+    if (h.Side === 'SHORT') {
+      const collateral = h.Collateral || ((h.EntryPrice || 0) * (h.Shares || 0));
+      holdingsValue += collateral + ((h.EntryPrice || 0) - lp) * (h.Shares || 0);
+    } else {
+      holdingsValue += lp * (h.Shares || 0);
+    }
   });
   const pendingValue = (allHoldings || [])
     .filter(h => h.Status === 'PENDING')
@@ -2073,6 +2141,24 @@ async function renderPortfolio() {
 
   tbody.innerHTML = holdings.map(h => {
     const livePrice = livePrices[h.Stock] || h.CurrentPrice || h.EntryPrice || 0;
+    if (h.Side === 'SHORT') {
+      const sh = h.Shares || 0;
+      const entry = h.EntryPrice || 0;
+      const pl2 = (entry - livePrice) * sh;                 // short gains when price falls
+      const plp = entry > 0 ? (((entry - livePrice) / entry) * 100).toFixed(2) : '0.00';
+      const cls = pl2 >= 0 ? 'green' : 'red';
+      const sign = pl2 >= 0 ? '+' : '';
+      const liq = h.LiquidationPrice || (entry * 1.9);
+      return `<tr>
+        <td>${h.Stock} <span style="font-size:0.55rem;font-weight:700;color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 4px;vertical-align:middle;">SHORT</span><br><span style="font-size:0.58rem;color:var(--koth);">Liq ₱${liq.toFixed(2)}</span></td>
+        <td>${sh.toLocaleString()}</td>
+        <td>₱${entry.toFixed(2)}</td>
+        <td>₱${livePrice.toFixed(2)}</td>
+        <td class="${cls}">${sign}₱${Math.abs(pl2).toLocaleString('en',{minimumFractionDigits:2})}</td>
+        <td class="${cls}">${sign}${plp}%</td>
+        <td><button onclick="coverShortPosition('${h.Stock}')" style="background:var(--koth-dim,rgba(212,175,55,0.12));color:var(--koth);border:1px solid var(--koth);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">COVER</button></td>
+      </tr>`;
+    }
     const pl2 = (livePrice - h.EntryPrice) * h.Shares;
     const plp = h.EntryPrice > 0 ? ((livePrice - h.EntryPrice) / h.EntryPrice * 100).toFixed(2) : '0.00';
     const cls = pl2 >= 0 ? 'green' : 'red';
@@ -2113,7 +2199,7 @@ function renderHistory() {
   }
 
   // CLOSED trades — actual closes only (exclude BUY activity rows), newest first
-  const closedTrades = trades.filter(t => t.CloseType !== 'BUY');
+  const closedTrades = trades.filter(t => t.CloseType !== 'BUY' && t.CloseType !== 'SHORT');
   const sortedTrades = [...closedTrades].sort((a,b) => new Date(b.CloseDate||0) - new Date(a.CloseDate||0));
   const tbody = document.getElementById('history-body');
   const empty = document.getElementById('history-empty');
@@ -2263,6 +2349,7 @@ function navTo(view) {
   if (view === 'portfolio') renderPortfolio();
   if (view === 'history') { loadTrades().then(renderHistory); loadOrders(); }
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
+  if (view === 'dashboard') maybeShowSplash();
 }
 
 // ============================================================
@@ -2382,6 +2469,95 @@ function openSellModal(stock, price, shares) {
   calcOrderTotal();
   document.getElementById('price-sym').textContent = stock;
   document.getElementById('price-current').textContent = '₱' + price.toFixed(2);
+}
+
+// ============================================================
+// SHORTING (frontend)
+// ============================================================
+const PSEI30_FE = ['AC','ACEN','AEV','ALI','AREIT','BDO','BPI','CBC','CNPF','CNVRG',
+  'DMC','EMI','GLO','GTCAP','ICT','JFC','JGS','LTG','MBT','MER',
+  'MONDE','PGOLD','PLUS','RCR','SCC','SM','SMC','SMPH','TEL','URC'];
+let shortPrice = 0;
+
+function setTradeMode(mode) {
+  const longP = document.getElementById('long-panel');
+  const shortP = document.getElementById('short-panel');
+  const lb = document.getElementById('tmode-long');
+  const sb = document.getElementById('tmode-short');
+  if (mode === 'short') {
+    longP.style.display = 'none'; shortP.style.display = 'block';
+    lb.classList.remove('active'); sb.classList.add('active');
+    const dl = document.getElementById('psei30-list');
+    if (dl && !dl.dataset.filled) { dl.innerHTML = PSEI30_FE.map(s => `<option value="${s}">`).join(''); dl.dataset.filled = '1'; }
+  } else {
+    shortP.style.display = 'none'; longP.style.display = 'block';
+    sb.classList.remove('active'); lb.classList.add('active');
+  }
+}
+
+async function onShortStockInput() {
+  const sym = document.getElementById('short-stock').value.trim().toUpperCase();
+  const priceEl = document.getElementById('short-price');
+  shortPrice = 0; priceEl.value = '—';
+  document.getElementById('short-liq').style.display = 'none';
+  if (!PSEI30_FE.includes(sym)) return;
+  try {
+    const res = await gasGet({ action: 'get_price', symbol: sym, playerID: currentUser.playerID });
+    if (res.success && res.price > 0) { shortPrice = res.price; priceEl.value = '₱' + res.price.toFixed(2); updateShortLiq(); }
+  } catch (e) {}
+}
+
+function onShortCollateralInput() { updateShortLiq(); }
+
+function updateShortLiq() {
+  const box = document.getElementById('short-liq');
+  const collateral = parseFloat(document.getElementById('short-collateral').value) || 0;
+  if (!shortPrice || shortPrice <= 0 || collateral <= 0) { box.style.display = 'none'; return; }
+  const shares = Math.floor(collateral / shortPrice);
+  box.style.display = 'block';
+  if (shares < 1) { box.innerHTML = 'Collateral too small for one share at ₱' + shortPrice.toFixed(2) + '.'; return; }
+  const liq = shortPrice * 1.9;
+  const locked = shares * shortPrice;
+  box.innerHTML = 'Shorting <strong>' + shares.toLocaleString() + '</strong> shares · locks <strong>₱' +
+    locked.toLocaleString('en', {minimumFractionDigits:2}) + '</strong><br>Liquidation price: <strong>₱' +
+    liq.toFixed(2) + '</strong> — auto-covers if the price rises here.';
+}
+
+async function submitShort(kind) {
+  const sym = document.getElementById('short-stock').value.trim().toUpperCase();
+  const collateral = parseFloat(document.getElementById('short-collateral').value) || 0;
+  const cash = playerData?.VirtualCash || 0;
+  if (!PSEI30_FE.includes(sym)) { showToast('error', 'Index Only', 'Pick a PSEi index stock from the list.'); return; }
+  if (!collateral || collateral <= 0) { showToast('error', 'No Collateral', 'Enter how much collateral to commit.'); return; }
+  if (collateral > cash) { showToast('error', 'Too Much', "Collateral can't exceed your available cash (₱" + cash.toLocaleString('en',{minimumFractionDigits:2}) + ').'); return; }
+  try {
+    showToast('info', 'Processing...', 'Submitting your short.');
+    const res = await gasPost({ action: kind === 'post' ? 'post_short' : 'short_market', playerID: currentUser.playerID, stock: sym, collateral });
+    if (res.success) {
+      if (res.resting) showToast('success', 'Short Posted ⏳', res.message || 'Resting — opens on an uptick.');
+      else if (res.pending) showToast('success', 'Short Queued ⏳', res.message || 'Queued for the open.');
+      else showToast('success', 'Short Opened ✅', res.message || ('Shorted ' + sym));
+      document.getElementById('short-collateral').value = '';
+      document.getElementById('short-liq').style.display = 'none';
+      await loadPlayerData(); await loadHoldings(); await loadOrders();
+      renderDashboard(); renderTopbar();
+      document.getElementById('trade-cash').textContent = '₱' + (playerData?.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
+    } else showToast('error', 'Short Failed', res.error || 'Could not place short.');
+  } catch (e) { showToast('error', 'Error', 'Connection failed. Try again.'); }
+}
+
+async function coverShortPosition(sym) {
+  try {
+    showToast('info', 'Processing...', 'Covering your short.');
+    const res = await gasPost({ action: 'cover_short', playerID: currentUser.playerID, stock: sym });
+    if (res.success) {
+      showToast('success', 'Short Covered ✅', res.message || ('Covered ' + sym));
+      if (Array.isArray(res.eloBreakdown)) showCloseReceipt(sym, res.eloChange || 0, res.eloBreakdown);
+      await loadPlayerData(); await loadHoldings(); await loadOrders();
+      renderDashboard(); renderTopbar();
+      if (document.getElementById('view-portfolio').classList.contains('active')) renderPortfolio();
+    } else showToast('error', 'Cover Failed', res.error || 'Could not cover.');
+  } catch (e) { showToast('error', 'Error', 'Connection failed. Try again.'); }
 }
 
 function openConfirm() {
@@ -2639,6 +2815,53 @@ async function gasGet(params) {
   const res = await fetch(GAS_URL + '?' + query);
   return res.json();
 }
+
+// ============================================================
+// ADS  (Airtable-driven: top banner, bottom-left, splash)
+// ============================================================
+let splashAd = null, splashShown = false;
+
+async function loadAds() {
+  try {
+    const res = await gasGet({ action: 'get_ads' });
+    if (!res.success || !res.ads) return;
+    const ads = res.ads;
+
+    const top = ads.top, topEl = document.getElementById('ad-top');
+    if (topEl && top && top.image) {
+      topEl.href = top.link || '#';
+      topEl.innerHTML = '<img src="' + top.image + '" alt="" style="display:block;width:100%;max-height:90px;object-fit:cover;border-radius:8px;">';
+      topEl.style.display = 'block';
+      topEl.style.margin = '10px 14px 0';
+    }
+
+    const bl = ads.bottomleft, blEl = document.getElementById('ad-bottomleft');
+    if (blEl && bl && bl.image) {
+      blEl.href = bl.link || '#';
+      blEl.innerHTML = '<img src="' + bl.image + '" alt="" style="display:block;width:100%;">';
+      blEl.style.display = 'block';
+    }
+
+    if (ads.splash && ads.splash.image) {
+      splashAd = ads.splash;
+      const link = document.getElementById('ad-splash-link');
+      link.href = splashAd.link || '#';
+      link.innerHTML = '<img src="' + splashAd.image + '" alt="" style="display:block;width:100%;border-radius:12px;">';
+      maybeShowSplash();
+    }
+  } catch (e) {}
+}
+
+// Splash shows once per login session, on the dashboard. Re-login (page reload) shows it again,
+// until the ad is deactivated/removed in Airtable.
+function maybeShowSplash() {
+  if (!splashAd || splashShown) return;
+  const dash = document.getElementById('view-dashboard');
+  if (!dash || !dash.classList.contains('active')) return;
+  document.getElementById('ad-splash').classList.add('show');
+  splashShown = true;
+}
+function closeSplashAd() { document.getElementById('ad-splash').classList.remove('show'); }
 
 // ============================================================
 // TOAST
@@ -3196,14 +3419,20 @@ async function loadTradeFeed() {
       return;
     }
     el.innerHTML = res.trades.map(t => {
-      const isBuy = t.CloseType === 'BUY';
       const ret = (t.ReturnPct || 0).toFixed(2);
       const retCls = t.ReturnPct >= 0 ? 'green' : 'red';
       const sign = t.ReturnPct >= 0 ? '+' : '';
       const username = t.Username || ('Player #' + (t.PlayerID || '?'));
-      const action = isBuy
-        ? `<span style="color:var(--green);font-weight:700;">BOUGHT</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} @ ₱${(t.EntryPrice||0).toFixed(2)}`
-        : `<span style="color:var(--red);font-weight:700;">SOLD</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
+      let action;
+      if (t.CloseType === 'BUY') {
+        action = `<span style="color:var(--green);font-weight:700;">BOUGHT</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} @ ₱${(t.EntryPrice||0).toFixed(2)}`;
+      } else if (t.CloseType === 'SHORT') {
+        action = `<span style="color:var(--obsidian);font-weight:700;">SHORTED</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} @ ₱${(t.EntryPrice||0).toFixed(2)}`;
+      } else if (t.CloseType === 'COVER') {
+        action = `<span style="color:var(--koth);font-weight:700;">COVERED</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
+      } else {
+        action = `<span style="color:var(--red);font-weight:700;">SOLD</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
+      }
       return `<div class="trade-feed-item">
         <div class="trade-feed-player">${username}</div>
         <div class="trade-feed-detail">${action}</div>
@@ -3429,17 +3658,24 @@ async function loadOrders() {
     orders.sort((a,b) => new Date(b.PlacedAt||0) - new Date(a.PlacedAt||0));
     body.innerHTML = orders.map(o => {
       const side = (o.Side || '').toUpperCase();
-      const sideColor = side === 'BUY' ? 'var(--green)' : 'var(--red)';
+      const isShort = side === 'SHORT' || side === 'SHORT_MARKET';
+      const sideColor = side === 'BUY' ? 'var(--green)' : (isShort ? 'var(--obsidian)' : 'var(--red)');
+      const sideLabel = side === 'SHORT_MARKET' ? 'SHORT' : side;
       const placed = o.PlacedAt ? String(o.PlacedAt).slice(0,10) : '—';
       const queuedOpen = o.Status === 'PENDING_OPEN';
       const lp = queuedOpen
         ? '<span style="color:var(--koth);">at open</span>'
-        : ((o.LimitPrice != null) ? '₱' + Number(o.LimitPrice).toFixed(2) : '—');
+        : (side === 'SHORT'
+            ? '<span style="color:var(--obsidian);">uptick &gt; ₱' + Number(o.LimitPrice||0).toFixed(2) + '</span>'
+            : ((o.LimitPrice != null) ? '₱' + Number(o.LimitPrice).toFixed(2) : '—'));
+      const qtyCell = isShort
+        ? '₱' + Number(o.Collateral||0).toLocaleString('en',{maximumFractionDigits:0}) + ' <span style="color:var(--gray);font-size:0.62rem;">collat</span>'
+        : (o.Shares || 0).toLocaleString();
       return '<tr>' +
         '<td style="font-weight:700;color:var(--koth);">' + (o.Stock || '') + '</td>' +
-        '<td style="color:' + sideColor + ';font-weight:700;">' + side + (queuedOpen ? ' <span style="color:var(--gray);font-weight:400;">(queued)</span>' : '') + '</td>' +
+        '<td style="color:' + sideColor + ';font-weight:700;">' + sideLabel + (queuedOpen ? ' <span style="color:var(--gray);font-weight:400;">(queued)</span>' : '') + '</td>' +
         '<td>' + lp + '</td>' +
-        '<td>' + (o.Shares || 0).toLocaleString() + '</td>' +
+        '<td>' + qtyCell + '</td>' +
         '<td style="color:var(--gray);font-size:0.7rem;">' + placed + '</td>' +
         '<td><button onclick="cancelLimitOrder(\'' + (o.id || '') + '\')" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:3px 10px;font-size:0.6rem;font-weight:700;cursor:pointer;">CANCEL</button></td>' +
         '</tr>';
