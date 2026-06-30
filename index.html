@@ -2484,14 +2484,25 @@ function setTradeMode(mode) {
   const shortP = document.getElementById('short-panel');
   const lb = document.getElementById('tmode-long');
   const sb = document.getElementById('tmode-short');
+  const pSym = document.getElementById('price-sym');
+  const pCur = document.getElementById('price-current');
+  const pChg = document.getElementById('price-change');
   if (mode === 'short') {
     longP.style.display = 'none'; shortP.style.display = 'block';
     lb.classList.remove('active'); sb.classList.add('active');
     const dl = document.getElementById('psei30-list');
     if (dl && !dl.dataset.filled) { dl.innerHTML = PSEI30_FE.map(s => `<option value="${s}">`).join(''); dl.dataset.filled = '1'; }
+    // Reflect the short stock in the right panel (or reset it)
+    const ss = document.getElementById('short-stock').value.trim();
+    if (ss) onShortStockInput();
+    else { if (pSym) pSym.textContent = '—'; if (pCur) pCur.textContent = '—'; if (pChg) { pChg.textContent = '—'; pChg.style.color = 'var(--gray)'; } }
   } else {
     shortP.style.display = 'none'; longP.style.display = 'block';
     sb.classList.remove('active'); lb.classList.add('active');
+    // Reflect the long stock in the right panel (or reset it)
+    const ls = document.getElementById('trade-stock').value.trim();
+    if (ls) fetchPrice(ls);
+    else { if (pSym) pSym.textContent = '—'; if (pCur) pCur.textContent = '—'; if (pChg) { pChg.textContent = '—'; pChg.style.color = 'var(--gray)'; } }
   }
 }
 
@@ -2500,11 +2511,34 @@ async function onShortStockInput() {
   const priceEl = document.getElementById('short-price');
   shortPrice = 0; priceEl.value = '—';
   document.getElementById('short-liq').style.display = 'none';
-  if (!PSEI30_FE.includes(sym)) return;
+  // Right-side MARKET PRICE panel (shared with the long flow)
+  const pSym = document.getElementById('price-sym');
+  const pCur = document.getElementById('price-current');
+  const pChg = document.getElementById('price-change');
+  if (pSym) pSym.textContent = sym || '—';
+  if (!PSEI30_FE.includes(sym)) {
+    if (pCur) pCur.textContent = '—';
+    if (pChg) { pChg.textContent = '—'; pChg.style.color = 'var(--gray)'; }
+    return;
+  }
+  if (pCur) pCur.textContent = 'Loading...';
+  if (pChg) pChg.textContent = '';
   try {
     const res = await gasGet({ action: 'get_price', symbol: sym, playerID: currentUser.playerID });
-    if (res.success && res.price > 0) { shortPrice = res.price; priceEl.value = '₱' + res.price.toFixed(2); updateShortLiq(); }
-  } catch (e) {}
+    if (res.success && res.price > 0) {
+      shortPrice = res.price;
+      priceEl.value = '₱' + res.price.toFixed(2);
+      const change = parseFloat(res.changePct || 0);
+      if (pCur) pCur.textContent = '₱' + res.price.toFixed(2);
+      if (pChg) { pChg.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '% today'; pChg.style.color = change >= 0 ? 'var(--green)' : 'var(--red)'; }
+      updateShortLiq();
+    } else {
+      if (pCur) pCur.textContent = 'Not available';
+      if (pChg) { pChg.textContent = res.error || 'Try during market hours'; pChg.style.color = 'var(--gray)'; }
+    }
+  } catch (e) {
+    if (pCur) pCur.textContent = 'Error';
+  }
 }
 
 function onShortCollateralInput() { updateShortLiq(); }
