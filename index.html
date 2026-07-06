@@ -1654,6 +1654,51 @@ body:not(.in-app) .float-panel{ display:none; }
           </div>
         </div>
         <div class="card" style="margin-top:14px;">
+          <div class="card-title">Trading Record</div>
+          <div style="display:flex;align-items:baseline;justify-content:center;gap:12px;margin:10px 0 20px;">
+            <span id="stat-winrate" style="font-family:'JetBrains Mono',monospace;font-size:2.6rem;font-weight:700;color:var(--koth);line-height:1;">—</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);letter-spacing:2px;">WIN&nbsp;RATE</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-total" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--white);">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">TRADES</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-wins" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--green);">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">WINS</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-losses" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--red);">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">LOSSES</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-longs" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--white);">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">LONGS</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-shorts" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--white);">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">SHORTS</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-streak" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--koth);">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">STREAK</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-best-streak" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--gold);">0</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">BEST&nbsp;STREAK</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-best-trade" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--green);">—</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">BEST&nbsp;TRADE</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;">
+              <div id="stat-worst-trade" style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:700;color:var(--red);">—</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);letter-spacing:1px;margin-top:5px;">WORST&nbsp;TRADE</div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:14px;">
           <div class="card-title">Daily ELO Receipts</div>
           <div class="receipt-strip" id="daily-receipt-strip"></div>
           <div id="daily-receipt-body">
@@ -2337,6 +2382,23 @@ function renderProfile() {
   document.getElementById('profile-progress-text').textContent = (elo - tier.min) + ' / ' + (tier.max - tier.min + 1);
   document.getElementById('profile-progress-fill').style.width = progress + '%';
   document.getElementById('profile-progress-fill').style.background = tier.color;
+
+  // Lifetime Trading Record — counters ride down on playerData (no extra call).
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const tt = playerData.TotalTrades || 0;
+  const w = playerData.Wins || 0, l = playerData.Losses || 0;
+  const wr = tt > 0 ? Math.round((w / tt) * 100) : 0;
+  const fmtPct = v => (v >= 0 ? '+' : '') + Number(v).toFixed(1) + '%';
+  setTxt('stat-winrate', tt > 0 ? wr + '%' : '—');
+  setTxt('stat-total', tt);
+  setTxt('stat-wins', w);
+  setTxt('stat-losses', l);
+  setTxt('stat-longs', playerData.LongTrades || 0);
+  setTxt('stat-shorts', playerData.ShortTrades || 0);
+  setTxt('stat-streak', playerData.CurrentStreak || 0);
+  setTxt('stat-best-streak', playerData.BestStreak || 0);
+  setTxt('stat-best-trade', tt > 0 && playerData.BestTradePct != null ? fmtPct(playerData.BestTradePct) : '—');
+  setTxt('stat-worst-trade', tt > 0 && playerData.WorstTradePct != null ? fmtPct(playerData.WorstTradePct) : '—');
 }
 
 // ============================================================
