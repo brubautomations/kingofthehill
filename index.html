@@ -533,6 +533,17 @@ body{
 .lb-head span{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--gray);letter-spacing:1px;text-transform:uppercase;}
 .lb-head .col-score{text-align:right;}
 .lb-row{display:grid;grid-template-columns:64px 1fr 190px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);transition:background 0.12s,transform 0.12s;}
+.lb-move{font-family:'JetBrains Mono',monospace;font-size:0.58rem;font-weight:700;margin-top:3px;line-height:1;text-align:center;}
+.lb-move.up{color:var(--green);}
+.lb-move.down{color:var(--red);}
+.lb-movers{display:flex;gap:12px;margin:0 0 14px;flex-wrap:wrap;}
+.lb-mover{flex:1;min-width:210px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 16px;border-radius:10px;border:1px solid var(--border2);background:var(--bg2);font-family:'JetBrains Mono',monospace;}
+.lb-mover-up{border-color:rgba(0,230,118,0.35);}
+.lb-mover-down{border-color:rgba(255,67,101,0.35);}
+.lb-mover-lbl{font-size:0.58rem;letter-spacing:1.5px;white-space:nowrap;}
+.lb-mover-up .lb-mover-lbl{color:var(--green);}
+.lb-mover-down .lb-mover-lbl{color:var(--red);}
+.lb-mover-val{font-size:0.82rem;font-weight:700;color:var(--white);text-align:right;}
 .lb-row:hover{background:rgba(255,255,255,0.025);transform:translateX(2px);}
 .lb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gray2);text-align:center;line-height:1;}
 .lb-rank.top1{color:var(--crown);font-size:1.9rem;}
@@ -1468,6 +1479,16 @@ body:not(.in-app) .float-panel{ display:none; }
       <!-- LEADERBOARD -->
       <div class="view" id="view-leaderboard">
         <div class="view-title">King of the Hill</div>
+        <div class="lb-movers" id="lb-movers" style="display:none;">
+          <div class="lb-mover lb-mover-up">
+            <span class="lb-mover-lbl">▲ MOST PLACES GAINED</span>
+            <span class="lb-mover-val" id="lb-mover-gain">—</span>
+          </div>
+          <div class="lb-mover lb-mover-down">
+            <span class="lb-mover-lbl">▼ MOST PLACES LOST</span>
+            <span class="lb-mover-val" id="lb-mover-lose">—</span>
+          </div>
+        </div>
         <div class="psei-banner" id="psei-banner">
           <div class="psei-banner-label">THE MARKET — BEAT IT TO CLIMB</div>
           <div class="psei-banner-right">
@@ -1671,6 +1692,7 @@ let playerData = null;
 let holdings = [];
 let trades = [];
 let leaderboard = [];
+let movers = { gainer: null, loser: null };
 let tradeSide = 'buy';
 let tradeType = 'market';
 let pendingOrder = null;
@@ -1908,7 +1930,7 @@ async function loadTrades() {
 async function loadLeaderboard() {
   try {
     const res = await gasGet({ action: 'leaderboard' });
-    if (res.success) leaderboard = res.leaderboard;
+    if (res.success) { leaderboard = res.leaderboard; movers = res.movers || { gainer: null, loser: null }; }
   } catch(e) {}
 }
 
@@ -2099,13 +2121,18 @@ function renderLeaderboard() {
       : i < 84 ? 'swamp-row'        // ranks 51–84
       : 'goblin-row';               // ranks 85–100
     const rankClass = isCrown ? 'top1' : isTop3 ? 'top3' : '';
+    // Rank movement since the last daily close (frozen; blank on first day / no movement).
+    const rd = p.rankDelta;
+    const rankMove = (rd == null || rd === 0) ? ''
+      : (rd > 0 ? '<div class="lb-move up">▲' + rd + '</div>'
+                : '<div class="lb-move down">▼' + Math.abs(rd) + '</div>');
     const elo = (p.ELO || 0).toLocaleString();
     const avatarLetter = username.charAt(0).toUpperCase();
     const kothBadge = isTop3 ? '<span class="tier-badge tb-koth" style="font-size:0.48rem;padding:2px 7px;">KOTH</span>' : '';
     const reportBtn = p.IsBot ? '' : '<button onclick="reportUser(\'' + username + '\')" style="background:none;border:none;color:var(--gray2);cursor:pointer;font-size:0.72rem;" title="Report">🚩</button>';
     const trash = p.StatusMessage ? '<span class="status-bubble" title="' + p.StatusMessage + '">' + p.StatusMessage + '</span>' : '';
     return '<div class="lb-row ' + rowClass + '">' +
-      '<div class="lb-rank ' + rankClass + '">' + rankLabel + '</div>' +
+      '<div class="lb-rank ' + rankClass + '">' + rankLabel + rankMove + '</div>' +
       '<div class="lb-player">' +
         '<div class="lb-avatar">' + avatarLetter + '</div>' +
         '<div style="min-width:0;">' +
@@ -2121,6 +2148,20 @@ function renderLeaderboard() {
     '</div>';
   }).join('');
   document.getElementById('lb-updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-PH', {hour:'2-digit',minute:'2-digit'});
+  renderMovers();
+}
+
+// Biggest place-gainer / loser since the last daily close — HUMANS ONLY (computed server-side).
+function renderMovers() {
+  const box = document.getElementById('lb-movers');
+  if (!box) return;
+  const g = movers && movers.gainer, l = movers && movers.loser;
+  if (!g && !l) { box.style.display = 'none'; return; }
+  box.style.display = 'flex';
+  const gEl = document.getElementById('lb-mover-gain');
+  const lEl = document.getElementById('lb-mover-lose');
+  if (gEl) gEl.innerHTML = g ? (g.username + ' <span style="color:var(--green);">+' + g.places + '</span>') : '—';
+  if (lEl) lEl.innerHTML = l ? (l.username + ' <span style="color:var(--red);">' + l.places + '</span>') : '—';
 }
 
 async function renderPortfolio() {
