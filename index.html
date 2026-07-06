@@ -91,11 +91,17 @@ body{
   overflow:hidden;
 }
 .landing-bg-img {
-  position:absolute; inset:-40px; z-index:0;
-  background:url('assets/bg.jpg') center/cover no-repeat;
-  will-change:transform;
-  transition:transform 0.25s ease-out;
+  position:absolute; inset:-40px; z-index:0; overflow:hidden; background:#05070c;
 }
+/* Slideshow layers injected by JS. Each crossfades and does a subtle Ken Burns pan/zoom. */
+.bg-slide{ position:absolute; inset:0; background-size:cover; background-position:center;
+  opacity:0; transition:opacity 1.2s ease-in-out; will-change:transform,opacity; }
+.bg-slide.active{ opacity:1; }
+.bg-slide.kb-right{ animation:kbRight 6.2s ease-out forwards; }
+.bg-slide.kb-left{ animation:kbLeft 6.2s ease-out forwards; }
+@keyframes kbRight{ from{transform:scale(1.05) translateX(-1.4%);} to{transform:scale(1.11) translateX(1.4%);} }
+@keyframes kbLeft{ from{transform:scale(1.05) translateX(1.4%);} to{transform:scale(1.11) translateX(-1.4%);} }
+@media (prefers-reduced-motion: reduce){ .bg-slide{animation:none !important; transition:opacity .6s;} }
 .landing-scrim {
   position:absolute; inset:0; z-index:1; pointer-events:none;
   background:
@@ -496,6 +502,12 @@ body{
 
 /* ── TRADE PANEL ── */
 .trade-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.tmode-tabs{display:flex;gap:24px;border-bottom:1px solid var(--border2);margin-bottom:16px;}
+.tmode-tab{background:none;border:none;padding:0 0 10px;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;color:var(--gray);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;}
+.tmode-tab:hover{color:var(--gray2);}
+.tmode-tab.active{color:var(--koth);border-bottom-color:var(--koth);}
+.trade-select{width:100%;padding:12px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.78rem;cursor:pointer;margin-top:6px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a929e' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 13px center;}
+.trade-select:focus{outline:none;border-color:var(--koth);}
 .trade-side-btn{padding:14px;border-radius:10px;border:1px solid var(--border2);font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;font-weight:400;cursor:pointer;background:var(--bg3);color:var(--gray);transition:all 0.15s;}
 .trade-side-btn.buy.active{background:var(--green-dim);color:var(--green);border-color:var(--green);box-shadow:0 0 18px rgba(0,230,118,0.25);}
 .trade-side-btn.sell.active{background:var(--red-dim);color:var(--red);border-color:var(--red);box-shadow:0 0 18px rgba(255,67,101,0.25);}
@@ -1370,21 +1382,24 @@ body:not(.in-app) .float-panel{ display:none; }
         <div class="grid-stackable" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div class="card">
             <div class="card-title">Order</div>
-            <div class="trade-grid" style="margin-bottom:14px;">
-              <button class="trade-type-btn active" id="tmode-long" onclick="setTradeMode('long')">LONG</button>
-              <button class="trade-type-btn" id="tmode-short" onclick="setTradeMode('short')">SHORT</button>
+            <div class="tmode-tabs">
+              <button class="tmode-tab active" id="tmode-long" onclick="setTradeMode('long')">LONG</button>
+              <button class="tmode-tab" id="tmode-short" onclick="setTradeMode('short')">SHORT</button>
             </div>
             <div id="long-panel">
-            <div class="trade-grid">
+            <div class="trade-grid" style="margin-bottom:14px;">
               <button class="trade-side-btn buy active" id="tbtn-buy" onclick="setTradeSide('buy')">BUY</button>
               <button class="trade-side-btn sell" id="tbtn-sell" onclick="setTradeSide('sell')">SELL</button>
             </div>
             <div id="trade-offhours" style="display:none;margin:0 0 12px;padding:9px 12px;border:1px solid var(--koth);border-radius:6px;background:rgba(212,175,55,0.08);font-family:'JetBrains Mono',monospace;font-size:0.68rem;line-height:1.45;color:var(--koth);">
               Market's closed right now &mdash; your order will queue and fill at the <strong>opening price</strong> when trading resumes. The figure below is just a reference, not your guaranteed fill.
             </div>
-            <div class="trade-grid" style="margin-bottom:14px;">
-              <button class="trade-type-btn active" id="ttype-market" onclick="setTradeType('market')">MARKET</button>
-              <button class="trade-type-btn" id="ttype-limit" onclick="setTradeType('limit')">LIMIT</button>
+            <div class="trade-input-group">
+              <label>Order Type</label>
+              <select id="trade-type-select" class="trade-select" onchange="setTradeType(this.value)">
+                <option value="market" selected>Market &mdash; fills at the live price</option>
+                <option value="limit">Limit &mdash; rests at your target price</option>
+              </select>
             </div>
             <div class="trade-input-group">
               <label>Stock Symbol</label>
@@ -2435,8 +2450,8 @@ function setTradeSide(side) {
 
 function setTradeType(type) {
   tradeType = type;
-  document.getElementById('ttype-market').className = 'trade-type-btn' + (type === 'market' ? ' active' : '');
-  document.getElementById('ttype-limit').className = 'trade-type-btn' + (type === 'limit' ? ' active' : '');
+  const sel = document.getElementById('trade-type-select');
+  if (sel && sel.value !== type) sel.value = type;
   const priceInput = document.getElementById('trade-price');
   const priceLabel = document.getElementById('trade-price-label');
   const hint = document.getElementById('trade-type-hint');
@@ -3014,6 +3029,63 @@ function initLanding() {
   initMusic();
   loadTicker('pse-ticker-landing');
   initLandingQuotes();
+  initLandingSlideshow();
+}
+
+// Login-page background slideshow. Auto-detects assets/bg1, bg2, bg3… (jpg or png), stopping at
+// the first gap — so dropping in bg6.jpg later makes it appear with no code change. Each image
+// shows ~5s, crossfades to the next, and does a subtle Ken Burns zoom/pan that alternates
+// direction. Falls back to the old single bg.jpg if no numbered images exist.
+let _slideTimer = null;
+function imageExists(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
+}
+async function initLandingSlideshow() {
+  const container = document.getElementById('landing-bg-img');
+  if (!container) return;
+  if (_slideTimer) { clearInterval(_slideTimer); _slideTimer = null; }
+
+  const found = [];
+  for (let i = 1; i <= 40; i++) {           // safety cap
+    let src = null;
+    if (await imageExists('assets/bg' + i + '.jpg')) src = 'assets/bg' + i + '.jpg';
+    else if (await imageExists('assets/bg' + i + '.png')) src = 'assets/bg' + i + '.png';
+    if (!src) break;                         // first gap → stop probing
+    found.push(src);
+  }
+  if (found.length === 0) found.push('assets/bg.jpg'); // fallback to the original single image
+
+  container.innerHTML = '';
+  const slides = found.map(src => {
+    const d = document.createElement('div');
+    d.className = 'bg-slide';
+    d.style.backgroundImage = "url('" + src + "')";
+    container.appendChild(d);
+    return d;
+  });
+
+  let cur = 0, dir = 0;
+  const activate = (idx, d) => {
+    slides.forEach((s, i) => { if (i !== idx) s.classList.remove('active'); });
+    const s = slides[idx];
+    s.classList.remove('kb-left', 'kb-right');
+    void s.offsetWidth;                      // reflow so the Ken Burns animation restarts each cycle
+    s.classList.add('active', d % 2 === 0 ? 'kb-right' : 'kb-left');
+  };
+  activate(0, 0);
+
+  if (slides.length > 1) {
+    _slideTimer = setInterval(() => {
+      cur = (cur + 1) % slides.length;
+      dir++;
+      activate(cur, dir);
+    }, 5000);
+  }
 }
 
 // Rotating fake-but-believable player testimonials on the landing page
