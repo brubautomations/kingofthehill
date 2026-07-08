@@ -546,6 +546,10 @@ body{
 .mkt-pct.up{color:var(--green);}
 .mkt-pct.down{color:var(--red);}
 .mkt-pct.flat{color:var(--gray);}
+.news-toggle{display:inline-flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:14px;}
+.news-toggle-btn{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);padding:6px 18px;border-radius:6px;cursor:pointer;font-weight:600;}
+.news-toggle-btn:hover{color:var(--white);}
+.news-toggle-btn.active{color:var(--koth);background:rgba(0,230,118,0.10);}
 .trade-select{width:100%;padding:12px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.78rem;cursor:pointer;margin-top:6px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a929e' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 13px center;}
 .trade-select:focus{outline:none;border-color:var(--koth);}
 .trade-side-btn{padding:14px;border-radius:10px;border:1px solid var(--border2);font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;font-weight:400;cursor:pointer;background:var(--bg3);color:var(--gray);transition:all 0.15s;}
@@ -1836,6 +1840,10 @@ body:not(.in-app) .float-panel{ display:none; }
           <div class="guide-subtab" data-sub="markets" onclick="marketSub('markets')">Markets</div>
         </div>
         <div class="market-pane active" id="mpane-news">
+          <div class="news-toggle">
+            <div class="news-toggle-btn active" data-region="ph" onclick="newsRegion('ph')">PH</div>
+            <div class="news-toggle-btn" data-region="us" onclick="newsRegion('us')">Global</div>
+          </div>
           <div id="market-news-list" class="news-list"><div class="guide-coming">Loading market news&hellip;</div></div>
         </div>
         <div class="market-pane" id="mpane-brief">
@@ -2650,13 +2658,20 @@ function marketSub(name) {
   if (name === 'brief') renderMarketBrief();
   if (name === 'markets') renderMarketData();
 }
+let _newsRegion = 'ph';
+function newsRegion(r) {
+  _newsRegion = r;
+  document.querySelectorAll('#mpane-news .news-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.region === r));
+  renderMarketNews();
+}
 async function renderMarketNews() {
   const box = document.getElementById('market-news-list');
   if (!box) return;
+  box.innerHTML = '<div class="guide-coming">Loading&hellip;</div>';
   try {
-    const res = await gasGet({ action: 'market_news' });
+    const res = await gasGet({ action: 'market_news', region: _newsRegion });
     const list = (res && res.success && Array.isArray(res.news)) ? res.news : [];
-    if (!list.length) { box.innerHTML = '<div class="guide-coming">No market news right now. Check back shortly.</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div class="guide-coming">No ' + (_newsRegion === 'us' ? 'global' : 'PH') + ' news right now. Check back shortly.</div>'; return; }
     box.innerHTML = list.map(n => {
       const h = (n.headline || '').replace(/</g, '&lt;');
       if (!h) return '';
