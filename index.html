@@ -506,6 +506,27 @@ body{
 .tmode-tab{background:none;border:none;padding:0 0 10px;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;color:var(--gray);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s,border-color .15s;}
 .tmode-tab:hover{color:var(--gray2);}
 .tmode-tab.active{color:var(--koth);border-bottom-color:var(--koth);}
+/* GUIDE panel: top tabs + subtabs + readable body */
+.guide-tabs{display:flex;gap:24px;border-bottom:1px solid var(--border2);margin-bottom:18px;flex-wrap:wrap;}
+.guide-tab{font-family:'JetBrains Mono',monospace;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);padding:0 0 12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600;}
+.guide-tab:hover{color:var(--white);}
+.guide-tab.active{color:var(--koth);border-bottom-color:var(--koth);}
+.guide-subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+.guide-subtab{font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;}
+.guide-subtab:hover{color:var(--white);border-color:var(--border2);}
+.guide-subtab.active{color:var(--koth);border-color:var(--koth);background:rgba(0,230,118,0.08);}
+.guide-pane{display:none;}
+.guide-pane.active{display:block;}
+.guide-section{display:none;}
+.guide-section.active{display:block;}
+.guide-body{max-width:760px;}
+.guide-body h3{font-family:'JetBrains Mono',monospace;font-size:1.05rem;color:var(--white);margin:0 0 16px;letter-spacing:0.5px;}
+.guide-body p{color:var(--text);font-size:0.9rem;line-height:1.75;margin:0 0 15px;}
+.guide-body ul{margin:0 0 15px;padding-left:18px;}
+.guide-body li{color:var(--text);font-size:0.9rem;line-height:1.65;margin-bottom:11px;}
+.guide-body strong{color:var(--white);font-weight:700;}
+.guide-body em{color:var(--koth);font-style:normal;font-weight:600;}
+.guide-coming{color:var(--gray);font-size:0.85rem;line-height:1.7;font-family:'JetBrains Mono',monospace;background:var(--bg3);border:1px dashed var(--border2);border-radius:10px;padding:28px;text-align:center;max-width:760px;}
 .trade-select{width:100%;padding:12px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.78rem;cursor:pointer;margin-top:6px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a929e' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 13px center;}
 .trade-select:focus{outline:none;border-color:var(--koth);}
 .trade-side-btn{padding:14px;border-radius:10px;border:1px solid var(--border2);font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;font-weight:400;cursor:pointer;background:var(--bg3);color:var(--gray);transition:all 0.15s;}
@@ -1313,6 +1334,9 @@ body:not(.in-app) .float-panel{ display:none; }
       <div class="nav-item" id="nav-profile" onclick="navTo('profile')">
         <span class="nav-icon"></span> My Profile
       </div>
+      <div class="nav-item" id="nav-guide" onclick="navTo('guide')">
+        <span class="nav-icon"></span> Guide
+      </div>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -1719,6 +1743,78 @@ body:not(.in-app) .float-panel{ display:none; }
             <button class="btn-primary" onclick="generateShareCard()">GENERATE SHARE CARD</button>
             <button class="btn-secondary" onclick="downloadShareCard()" id="btn-download" style="display:none;">DOWNLOAD</button>
           </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-guide">
+        <div class="view-title">Guide</div>
+        <div class="guide-tabs">
+          <div class="guide-tab active" id="gtab-howto" onclick="guideTab('howto')">How to Play</div>
+          <div class="guide-tab" id="gtab-market" onclick="guideTab('market')">Market</div>
+          <div class="guide-tab" id="gtab-research" onclick="guideTab('research')">Research</div>
+        </div>
+
+        <!-- HOW TO PLAY -->
+        <div class="guide-pane active" id="gpane-howto">
+          <div class="guide-subtabs">
+            <div class="guide-subtab active" data-sub="basics" onclick="guideSub('howto','basics')">Basics</div>
+            <div class="guide-subtab" data-sub="scoring" onclick="guideSub('howto','scoring')">Scoring</div>
+            <div class="guide-subtab" data-sub="cash" onclick="guideSub('howto','cash')">Holding Cash</div>
+            <div class="guide-subtab" data-sub="mistakes" onclick="guideSub('howto','mistakes')">Mistakes</div>
+            <div class="guide-subtab" data-sub="baddays" onclick="guideSub('howto','baddays')">Bad Days</div>
+          </div>
+          <div class="guide-body">
+            <div class="guide-section active" data-sec="basics">
+              <h3>The Basics</h3>
+              <p>King of the Hill ranks every player by a single number: your <strong>ELO rating</strong>. You start at 800 ELO, in the Silver 3 tier. As your rating rises you climb through the tiers &mdash; Dirt, Bronze, Silver, Gold, Platinum, Diamond, and finally Obsidian.</p>
+              <p>The leaderboard sorts everyone, players and bots alike, by ELO. The <strong>top ten are royalty</strong>, and the highest-ranked player wears the <strong>crown</strong>.</p>
+              <p>Your ELO updates once per day, at the <strong>3:00 PM market close</strong>, when the system reviews your day and moves your rating up or down. This game is not about trading quickly. It is about being <em>correct</em>.</p>
+            </div>
+            <div class="guide-section" data-sec="scoring">
+              <h3>How Scoring Works</h3>
+              <p>The central measure is your performance against the market, represented by the <strong>PSEi index</strong>. Each day your portfolio's movement is compared to the index. Beating the index raises your ELO, and the wider the margin, the larger the gain. Matching the index still produces a small gain. Lagging it lowers your ELO, and lagging it badly lowers it more.</p>
+              <p>Two more factors add to your daily score. Holding <strong>winning positions</strong> is rewarded: a position in profit earns a bonus, and a strong winner at a new high earns more. A strong overall day for your portfolio, a gain of roughly seven percent or more, earns additional ELO.</p>
+              <p>When you close a trade, the result is scored:</p>
+              <ul>
+                <li>Closing a winner you have held for <strong>three or more days</strong> earns a conviction bonus. The larger the gain and the longer the hold, the greater the reward.</li>
+                <li>Cutting a loss quickly costs very little, only a small commission. Exiting losing positions early is deliberately inexpensive.</li>
+                <li>Every closed trade pays a small <strong>commission</strong>, win or lose, the same as a real brokerage fee.</li>
+              </ul>
+            </div>
+            <div class="guide-section" data-sec="cash">
+              <h3>You Are Not Required to Trade</h3>
+              <p><strong>Cash is treated as a valid position.</strong> Holding cash is not penalized; it is scored against the index like anything else. On a day when the market falls, holding cash means you outperformed the falling index, which registers as a <em>gain</em>. Sitting out a rally costs you a little, and a flat day still produces a small gain.</p>
+              <p>You are never forced to trade. Patience is a legitimate strategy. A player who holds cash through a market decline climbs while those who sell in panic fall with the market.</p>
+            </div>
+            <div class="guide-section" data-sec="mistakes">
+              <h3>Common Mistakes to Avoid</h3>
+              <ul>
+                <li><strong>Overtrading.</strong> Every closed trade costs a commission, and after six result-generating trades in a single day, further trades no longer earn ELO. Frequent trading does not raise your rating &mdash; it erodes it.</li>
+                <li><strong>Taking small gains while holding large losses.</strong> Selling winners at tiny profits while letting losers fall much further is a common error. A single large loss can erase many small gains. Do the reverse: let winners run and cut losses promptly.</li>
+                <li><strong>Holding losing positions too long.</strong> Holding a losing position for five or more days while it is down ten percent or more adds an extra penalty when you finally close it.</li>
+              </ul>
+            </div>
+            <div class="guide-section" data-sec="baddays">
+              <h3>If You Have a Losing Day</h3>
+              <p>Losing twenty or forty ELO on a difficult day is normal and expected.</p>
+              <ul>
+                <li>For your <strong>first twenty days</strong>, your positive days count double. This new-player boost means early setbacks recover quickly once you settle into a consistent approach.</li>
+                <li>ELO is a long-term measure. One poor day is a single data point, not a permanent result.</li>
+                <li>The fix for a losing streak is not to trade more, but to trade less and more carefully. Beat the index, hold your winners, cut your losers, and let the daily scoring work in your favor.</li>
+              </ul>
+              <p>The game does not reward the most active or aggressive player. It rewards the one who is <em>correct</em>.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MARKET -->
+        <div class="guide-pane" id="gpane-market">
+          <div class="guide-coming">Market brief and news are coming soon.</div>
+        </div>
+
+        <!-- RESEARCH -->
+        <div class="guide-pane" id="gpane-research">
+          <div class="guide-coming">Research is coming soon.</div>
         </div>
       </div>
 
@@ -2497,6 +2593,20 @@ function navTo(view) {
   if (view === 'history') { loadTrades().then(renderHistory); loadOrders(); }
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
   if (view === 'dashboard') maybeShowSplash();
+}
+
+// Guide panel: top tabs (How to Play / Market / Research) + subtabs within a pane.
+function guideTab(name) {
+  document.querySelectorAll('#view-guide .guide-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#view-guide .guide-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('gtab-' + name)?.classList.add('active');
+  document.getElementById('gpane-' + name)?.classList.add('active');
+}
+function guideSub(pane, sec) {
+  const p = document.getElementById('gpane-' + pane);
+  if (!p) return;
+  p.querySelectorAll('.guide-subtab').forEach(s => s.classList.toggle('active', s.dataset.sub === sec));
+  p.querySelectorAll('.guide-section').forEach(s => s.classList.toggle('active', s.dataset.sec === sec));
 }
 
 // ============================================================
@@ -3311,7 +3421,7 @@ function initMusic() {
     const st = document.getElementById('lp-song-title');
     if (!st) return;
     clearTimeout(titleTimer);
-    st.textContent = '\u266A Johan Söderqvist and Patrik Andrén \u2014 In the Name of the Tsar';
+    st.textContent = '\u266A Audiomachine \u2014 Avow';
     st.classList.remove('show');
     void st.offsetWidth;            // reflow so the slide-in replays each time
     st.classList.add('show');
