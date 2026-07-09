@@ -550,6 +550,15 @@ body{
 .news-toggle-btn{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);padding:6px 18px;border-radius:6px;cursor:pointer;font-weight:600;}
 .news-toggle-btn:hover{color:var(--white);}
 .news-toggle-btn.active{color:var(--koth);background:rgba(0,230,118,0.10);}
+.mkt-asof{font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin:0 0 14px;}
+.brief-wc{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);opacity:0.55;margin-top:16px;text-align:right;}
+.cal-list{display:flex;flex-direction:column;gap:8px;max-width:760px;}
+.cal-row{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px;}
+.cal-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.cal-date{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--koth);font-weight:700;}
+.cal-ticker{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--white);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;}
+.cal-type{font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);}
+.cal-desc{color:var(--text);font-size:0.82rem;line-height:1.5;margin-top:6px;}
 .trade-select{width:100%;padding:12px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.78rem;cursor:pointer;margin-top:6px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a929e' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 13px center;}
 .trade-select:focus{outline:none;border-color:var(--koth);}
 .trade-side-btn{padding:14px;border-radius:10px;border:1px solid var(--border2);font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;font-weight:400;cursor:pointer;background:var(--bg3);color:var(--gray);transition:all 0.15s;}
@@ -1838,6 +1847,7 @@ body:not(.in-app) .float-panel{ display:none; }
           <div class="guide-subtab active" data-sub="news" onclick="marketSub('news')">News</div>
           <div class="guide-subtab" data-sub="brief" onclick="marketSub('brief')">Brief</div>
           <div class="guide-subtab" data-sub="markets" onclick="marketSub('markets')">Markets</div>
+          <div class="guide-subtab" data-sub="calendar" onclick="marketSub('calendar')">Calendar</div>
         </div>
         <div class="market-pane active" id="mpane-news">
           <div class="news-toggle">
@@ -1851,6 +1861,9 @@ body:not(.in-app) .float-panel{ display:none; }
         </div>
         <div class="market-pane" id="mpane-markets">
           <div id="market-data-body"><div class="guide-coming">Loading market data&hellip;</div></div>
+        </div>
+        <div class="market-pane" id="mpane-calendar">
+          <div id="market-cal-body"><div class="guide-coming">Loading calendar&hellip;</div></div>
         </div>
       </div>
 
@@ -2657,6 +2670,7 @@ function marketSub(name) {
   if (name === 'news') renderMarketNews();
   if (name === 'brief') renderMarketBrief();
   if (name === 'markets') renderMarketData();
+  if (name === 'calendar') renderMarketCalendar();
 }
 let _newsRegion = 'ph';
 function newsRegion(r) {
@@ -2695,7 +2709,11 @@ async function renderMarketBrief() {
     const res = await gasGet({ action: 'market_brief' });
     const text = (res && res.success) ? (res.brief || '') : '';
     if (!text.trim()) { box.innerHTML = '<div class="guide-coming">No market brief right now. Check back after the morning update.</div>'; return; }
-    box.innerHTML = '<div class="brief-card"><div class="brief-body">' + text.replace(/</g, '&lt;') + '</div></div>';
+    let body = text.trim();
+    body = body.replace(/\s*\(?\s*(word\s*count\s*:?\s*)?\d+\s*words?\s*\)?\.?\s*$/i, '').trim();
+    const wc = body.split(/\s+/).filter(Boolean).length;
+    box.innerHTML = '<div class="brief-card"><div class="brief-body">' + body.replace(/</g, '&lt;') + '</div>' +
+      '<div class="brief-wc">' + wc + ' words</div></div>';
   } catch (e) {
     box.innerHTML = '<div class="guide-coming">Couldn\'t load the brief right now.</div>';
   }
@@ -2721,9 +2739,33 @@ async function renderMarketData() {
     };
     const html = section('PSEi Sectors', res.psei) + section('World Indices', res.world) +
       section('Commodities', res.commodities) + section('FX &amp; Yields', res.fx);
-    box.innerHTML = html || '<div class="guide-coming">No market data right now.</div>';
+    const asOf = res.asOf ? '<div class="mkt-asof">Data as of ' + String(res.asOf).replace(/</g, '&lt;') + '</div>' : '';
+    box.innerHTML = html ? (asOf + html) : '<div class="guide-coming">No market data right now.</div>';
   } catch (e) {
     box.innerHTML = '<div class="guide-coming">Couldn\'t load market data right now.</div>';
+  }
+}
+async function renderMarketCalendar() {
+  const box = document.getElementById('market-cal-body');
+  if (!box) return;
+  try {
+    const res = await gasGet({ action: 'market_calendar' });
+    const list = (res && res.success && Array.isArray(res.calendar)) ? res.calendar : [];
+    if (!list.length) { box.innerHTML = '<div class="guide-coming">No upcoming events right now.</div>'; return; }
+    const asOf = res.asOf ? '<div class="mkt-asof">Calendar as of ' + String(res.asOf).replace(/</g, '&lt;') + '</div>' : '';
+    box.innerHTML = asOf + '<div class="cal-list">' + list.map(c => {
+      const d = (c.date || '').replace(/</g, '&lt;');
+      const tk = (c.ticker || '').replace(/</g, '&lt;');
+      const ty = (c.type || '').replace(/</g, '&lt;');
+      const ds = (c.desc || '').replace(/</g, '&lt;');
+      return '<div class="cal-row"><div class="cal-top">' +
+        '<span class="cal-date">' + d + '</span>' +
+        (tk ? '<span class="cal-ticker">' + tk + '</span>' : '') +
+        (ty ? '<span class="cal-type">' + ty + '</span>' : '') + '</div>' +
+        (ds ? '<div class="cal-desc">' + ds + '</div>' : '') + '</div>';
+    }).join('') + '</div>';
+  } catch (e) {
+    box.innerHTML = '<div class="guide-coming">Couldn\'t load the calendar right now.</div>';
   }
 }
 
