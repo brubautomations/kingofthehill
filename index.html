@@ -1368,21 +1368,34 @@ body:not(.in-app) .float-panel{ display:none; }
       <div class="nav-item" id="nav-leagues" onclick="navTo('leagues')">
         <span class="nav-icon"></span> Leagues
       </div>
+      <div class="nav-item" id="nav-guide" onclick="navTo('guide')">
+        <span class="nav-icon"></span> Guide
+      </div>
+      <div class="nav-section">Market</div>
+      <div class="nav-item" id="navm-news" onclick="navMarket('news')">
+        <span class="nav-icon"></span> News
+      </div>
+      <div class="nav-item" id="navm-brief" onclick="navMarket('brief')">
+        <span class="nav-icon"></span> Brief
+      </div>
+      <div class="nav-item" id="navm-markets" onclick="navMarket('markets')">
+        <span class="nav-icon"></span> Live Board
+      </div>
+      <div class="nav-item" id="navm-calendar" onclick="navMarket('calendar')">
+        <span class="nav-icon"></span> Calendar
+      </div>
+      <div class="nav-item" id="navm-quant" onclick="navMarket('quant')">
+        <span class="nav-icon"></span> Quant Signals
+      </div>
+      <div class="nav-item" id="navm-research" onclick="navMarket('research')">
+        <span class="nav-icon"></span> Research
+      </div>
       <div class="nav-section">Account</div>
       <div class="nav-item" id="nav-history" onclick="navTo('history')">
         <span class="nav-icon"></span> Trade History
       </div>
       <div class="nav-item" id="nav-profile" onclick="navTo('profile')">
         <span class="nav-icon"></span> My Profile
-      </div>
-      <div class="nav-item" id="nav-guide" onclick="navTo('guide')">
-        <span class="nav-icon"></span> Guide
-      </div>
-      <div class="nav-item" id="nav-market" onclick="navTo('market')">
-        <span class="nav-icon"></span> Market
-      </div>
-      <div class="nav-item" id="nav-research" onclick="navTo('research')">
-        <span class="nav-icon"></span> Research
       </div>
     </div>
 
@@ -1851,14 +1864,7 @@ body:not(.in-app) .float-panel{ display:none; }
       </div>
 
       <div class="view" id="view-market">
-        <div class="view-title">Market</div>
-        <div class="guide-subtabs">
-          <div class="guide-subtab active" data-sub="news" onclick="marketSub('news')">News</div>
-          <div class="guide-subtab" data-sub="brief" onclick="marketSub('brief')">Brief</div>
-          <div class="guide-subtab" data-sub="markets" onclick="marketSub('markets')">Markets</div>
-          <div class="guide-subtab" data-sub="calendar" onclick="marketSub('calendar')">Calendar</div>
-          <div class="guide-subtab" data-sub="quant" onclick="marketSub('quant')">Quant Signals</div>
-        </div>
+        <div class="view-title" id="market-view-title">News</div>
         <div class="market-pane active" id="mpane-news">
           <div class="news-toggle">
             <div class="news-toggle-btn active" data-region="ph" onclick="newsRegion('ph')">PH</div>
@@ -1878,11 +1884,9 @@ body:not(.in-app) .float-panel{ display:none; }
         <div class="market-pane" id="mpane-quant">
           <div id="market-quant-body"><div class="guide-coming">Loading signals&hellip;</div></div>
         </div>
-      </div>
-
-      <div class="view" id="view-research">
-        <div class="view-title">Research</div>
-        <div class="guide-coming">Research is coming soon.</div>
+        <div class="market-pane" id="mpane-research">
+          <div class="guide-coming">Research is coming soon.</div>
+        </div>
       </div>
 
     </div><!-- end main -->
@@ -2661,6 +2665,18 @@ function navTo(view) {
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
   if (view === 'dashboard') maybeShowSplash();
   if (view === 'market') renderMarketNews();
+}
+
+// Market nav items all open the shared market view and switch the active pane.
+const MARKET_TITLES = { news: 'News', brief: 'Brief', markets: 'Live Board', calendar: 'Calendar', quant: 'Quant Signals', research: 'Research' };
+function navMarket(sub) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('navm-' + sub)?.classList.add('active');
+  document.getElementById('view-market')?.classList.add('active');
+  const t = document.getElementById('market-view-title');
+  if (t) t.textContent = MARKET_TITLES[sub] || 'Market';
+  marketSub(sub);
 }
 
 // Guide panel: top tabs (How to Play / Market / Research) + subtabs within a pane.
