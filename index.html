@@ -559,6 +559,15 @@ body{
 .cal-ticker{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--white);background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;}
 .cal-type{font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);}
 .cal-desc{color:var(--text);font-size:0.82rem;line-height:1.5;margin-top:6px;}
+.quant-section{max-width:760px;margin-bottom:20px;}
+.quant-title{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:0.66rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--koth);margin:0 0 9px;font-weight:700;}
+.quant-count{font-size:0.55rem;color:var(--gray);background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1px 8px;letter-spacing:0.5px;}
+.quant-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;}
+.quant-left{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;}
+.quant-name{font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--white);font-weight:700;}
+.quant-meta{font-size:0.66rem;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.quant-right{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.quant-price{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text);}
 .trade-select{width:100%;padding:12px 13px;border-radius:9px;border:1px solid var(--border2);background:var(--bg3);color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.78rem;cursor:pointer;margin-top:6px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a929e' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 13px center;}
 .trade-select:focus{outline:none;border-color:var(--koth);}
 .trade-side-btn{padding:14px;border-radius:10px;border:1px solid var(--border2);font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;font-weight:400;cursor:pointer;background:var(--bg3);color:var(--gray);transition:all 0.15s;}
@@ -1848,6 +1857,7 @@ body:not(.in-app) .float-panel{ display:none; }
           <div class="guide-subtab" data-sub="brief" onclick="marketSub('brief')">Brief</div>
           <div class="guide-subtab" data-sub="markets" onclick="marketSub('markets')">Markets</div>
           <div class="guide-subtab" data-sub="calendar" onclick="marketSub('calendar')">Calendar</div>
+          <div class="guide-subtab" data-sub="quant" onclick="marketSub('quant')">Quant Signals</div>
         </div>
         <div class="market-pane active" id="mpane-news">
           <div class="news-toggle">
@@ -1864,6 +1874,9 @@ body:not(.in-app) .float-panel{ display:none; }
         </div>
         <div class="market-pane" id="mpane-calendar">
           <div id="market-cal-body"><div class="guide-coming">Loading calendar&hellip;</div></div>
+        </div>
+        <div class="market-pane" id="mpane-quant">
+          <div id="market-quant-body"><div class="guide-coming">Loading signals&hellip;</div></div>
         </div>
       </div>
 
@@ -2671,6 +2684,34 @@ function marketSub(name) {
   if (name === 'brief') renderMarketBrief();
   if (name === 'markets') renderMarketData();
   if (name === 'calendar') renderMarketCalendar();
+  if (name === 'quant') renderQuantSignals();
+}
+async function renderQuantSignals() {
+  const box = document.getElementById('market-quant-body');
+  if (!box) return;
+  const esc = s => String(s || '').replace(/</g, '&lt;');
+  try {
+    const res = await gasGet({ action: 'quant_signals' });
+    const sigs = (res && res.success && Array.isArray(res.signals)) ? res.signals : [];
+    if (!sigs.length) { box.innerHTML = '<div class="guide-coming">No signals firing right now. The scanner sweeps the market hourly.</div>'; return; }
+    box.innerHTML = '<div class="mkt-asof">PSE technical scan &middot; refreshed hourly</div>' + sigs.map(s => {
+      const rows = s.rows.map(r => {
+        const chg = parseFloat(String(r.change).replace(/[^0-9.\-]/g, '')) || 0;
+        const cls = chg > 0 ? 'up' : chg < 0 ? 'down' : 'flat';
+        const arrow = chg > 0 ? '\u25B2' : chg < 0 ? '\u25BC' : '\u2013';
+        const meta = [r.desc, r.sector].filter(Boolean).join(' \u00B7 ');
+        return '<div class="quant-row"><div class="quant-left">' +
+          '<span class="quant-name">' + esc(r.name) + '</span>' +
+          (meta ? '<span class="quant-meta">' + esc(meta) + '</span>' : '') + '</div>' +
+          '<div class="quant-right"><span class="quant-price">' + esc(r.price) + '</span>' +
+          '<span class="mkt-pct ' + cls + '">' + arrow + ' ' + (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%</span></div></div>';
+      }).join('');
+      return '<div class="quant-section"><div class="quant-title">' + esc(s.label) +
+        '<span class="quant-count">' + s.rows.length + '</span></div>' + rows + '</div>';
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '<div class="guide-coming">Couldn\'t load signals right now.</div>';
+  }
 }
 let _newsRegion = 'ph';
 function newsRegion(r) {
