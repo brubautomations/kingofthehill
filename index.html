@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>King of the Hill — PSE Trading Championship</title>
 <meta name="google-signin-client_id" content="501217452261-dnphdo1abncnt5nhqcukvut952h0shjf.apps.googleusercontent.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Cormorant+Garamond:ital,wght@1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -560,6 +560,31 @@ body{
 .movers-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s;}
 .movers-row:hover{background:var(--bg3);}
 .movers-sym{font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--white);font-weight:700;}
+.movers-right{display:flex;align-items:baseline;gap:7px;}
+.movers-price{font-family:'JetBrains Mono',monospace;font-size:0.64rem;color:var(--gray);}
+#player-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.pp-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:28px 30px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
+.pp-logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--white);margin-bottom:18px;}
+.pp-logo span{color:var(--koth);}
+.pp-name{font-family:'Bebas Neue',sans-serif;font-size:2.1rem;color:var(--white);line-height:1;}
+.pp-school{font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:var(--gray);margin-top:6px;}
+.pp-rankline{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--koth);margin-top:14px;letter-spacing:1px;}
+.pp-return{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;margin-top:6px;line-height:1;}
+.pp-return.up{color:var(--green);}
+.pp-return.down{color:var(--red);}
+.pp-holdings-title{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:2px;color:var(--gray);margin:20px 0 10px;text-transform:uppercase;}
+.pp-holdings{display:flex;flex-direction:column;gap:6px;}
+.pp-hold-row{display:flex;align-items:center;justify-content:space-between;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;}
+.pp-hold-sym{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--white);font-weight:700;}
+.pp-hold-right{font-family:'JetBrains Mono',monospace;font-size:0.72rem;display:flex;gap:9px;align-items:center;}
+.pp-hold-pct.up{color:var(--green);}
+.pp-hold-pct.down{color:var(--red);}
+.pp-hold-side{color:var(--gray);font-size:0.58rem;letter-spacing:1px;}
+.pp-empty{color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:8px;}
+.patch-entry{max-width:760px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:12px;}
+.patch-head{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--koth);margin-bottom:8px;}
+.patch-title{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--white);letter-spacing:1px;margin-bottom:8px;}
+.patch-body{color:var(--text);font-size:0.86rem;line-height:1.65;}
 .movers-pct{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:600;}
 .movers-pct.up{color:var(--green);}
 .movers-pct.down{color:var(--red);}
@@ -1411,6 +1436,9 @@ body:not(.in-app) .float-panel{ display:none; }
       <div class="nav-item" id="nav-profile" onclick="navTo('profile')">
         <span class="nav-icon"></span> My Profile
       </div>
+      <div class="nav-item" id="nav-patchnotes" onclick="navTo('patchnotes')">
+        <span class="nav-icon"></span> Patch Notes
+      </div>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -1675,6 +1703,23 @@ body:not(.in-app) .float-panel{ display:none; }
       </div>
 
       <!-- HISTORY -->
+      <div class="view" id="view-patchnotes">
+        <div class="view-title">Patch Notes</div>
+        <div id="patchnotes-body"><div class="guide-coming">Loading patch notes&hellip;</div></div>
+      </div>
+
+      <div id="player-popup-overlay" onclick="closePlayerPopup(event)">
+        <div class="pp-card" onclick="event.stopPropagation()">
+          <div class="pp-logo">KING OF THE <span>HILL</span></div>
+          <div class="pp-name" id="pp-name">&mdash;</div>
+          <div class="pp-school" id="pp-school"></div>
+          <div class="pp-rankline" id="pp-rankline"></div>
+          <div class="pp-return" id="pp-return"></div>
+          <div class="pp-holdings-title">Holdings</div>
+          <div id="pp-holdings" class="pp-holdings"></div>
+        </div>
+      </div>
+
       <div class="view" id="view-history">
         <div class="view-title">Trade History</div>
         <!-- RESTING LIMIT ORDERS -->
@@ -1822,7 +1867,7 @@ body:not(.in-app) .float-panel{ display:none; }
         </div>
         <div class="card" style="margin-top:14px;text-align:center;padding:28px;">
           <div class="card-title">Share Your Rank</div>
-          <canvas id="share-canvas" width="1080" height="1080"></canvas>
+          <canvas id="share-canvas" width="1080" height="1350"></canvas>
           <img id="share-preview-img" style="max-width:320px;border-radius:12px;margin-bottom:16px;" alt="">
           <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
             <button class="btn-primary" onclick="generateShareCard()">GENERATE SHARE CARD</button>
@@ -2381,9 +2426,9 @@ function renderLeaderboard() {
     const elo = (p.ELO || 0).toLocaleString();
     const avatarLetter = username.charAt(0).toUpperCase();
     const kothBadge = isTop3 ? '<span class="tier-badge tb-koth" style="font-size:0.48rem;padding:2px 7px;">KOTH</span>' : '';
-    const reportBtn = p.IsBot ? '' : '<button onclick="reportUser(\'' + username + '\')" style="background:none;border:none;color:var(--gray2);cursor:pointer;font-size:0.72rem;" title="Report">🚩</button>';
+    const reportBtn = p.IsBot ? '' : '<button onclick="event.stopPropagation();reportUser(\'' + username + '\')" style="background:none;border:none;color:var(--gray2);cursor:pointer;font-size:0.72rem;" title="Report">🚩</button>';
     const trash = p.StatusMessage ? '<span class="status-bubble" title="' + p.StatusMessage + '">' + p.StatusMessage + '</span>' : '';
-    return '<div class="lb-row ' + rowClass + '">' +
+    return '<div class="lb-row ' + rowClass + '" onclick="openPlayerPopup(' + (p.PlayerID || 0) + ')" style="cursor:pointer;">' +
       '<div class="lb-rank ' + rankClass + '">' + rankLabel + rankMove + '</div>' +
       '<div class="lb-player">' +
         '<div class="lb-avatar">' + avatarLetter + '</div>' +
@@ -2691,6 +2736,7 @@ function navTo(view) {
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
   if (view === 'dashboard') maybeShowSplash();
   if (view === 'market') renderMarketNews();
+  if (view === 'patchnotes') renderPatchNotes();
 }
 
 // Market nav items all open the shared market view and switch the active pane.
@@ -2727,8 +2773,10 @@ function paintMovers() {
   const lose = _moversScope === 'index' ? _moversData.indexLosers : _moversData.nonIndexLosers;
   const row = (s, cls) => {
     const pct = Number(s.pct) || 0;
+    const price = Number(s.price) || 0;
     return '<div class="movers-row" onclick="pickMover(\'' + s.symbol + '\')"><span class="movers-sym">' + s.symbol +
-      '</span><span class="movers-pct ' + cls + '">' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%</span></div>';
+      '</span><span class="movers-right"><span class="movers-price">\u20B1' + price.toLocaleString(undefined, { maximumFractionDigits: 2 }) +
+      '</span><span class="movers-pct ' + cls + '">' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%</span></span></div>';
   };
   g.innerHTML = (gain && gain.length) ? gain.map(s => row(s, 'up')).join('') : '<div class="movers-empty">None</div>';
   l.innerHTML = (lose && lose.length) ? lose.map(s => row(s, 'down')).join('') : '<div class="movers-empty">None</div>';
@@ -2739,6 +2787,61 @@ function pickMover(sym) {
   el.value = sym;
   if (typeof fetchPrice === 'function') fetchPrice(sym);
   el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Tap a leaderboard player -> public profile popup. Shows conviction (positions + P&L% + side),
+// never money / shares / entry prices. Closes on click-outside.
+async function openPlayerPopup(pid) {
+  if (!pid) return;
+  const ov = document.getElementById('player-popup-overlay');
+  document.getElementById('pp-name').textContent = 'Loading\u2026';
+  ['pp-school', 'pp-rankline', 'pp-return'].forEach(id => document.getElementById(id).textContent = '');
+  document.getElementById('pp-holdings').innerHTML = '';
+  ov.style.display = 'flex';
+  try {
+    const res = await gasGet({ action: 'public_profile', playerID: pid });
+    if (!res || !res.success || !res.profile) { document.getElementById('pp-name').textContent = 'Unavailable'; return; }
+    const pr = res.profile;
+    const tier = getTier(pr.elo || 0);
+    const tierLabel = getTierLabel(tier);
+    document.getElementById('pp-name').textContent = pr.username || 'Player';
+    document.getElementById('pp-school').textContent = pr.school || '';
+    document.getElementById('pp-rankline').textContent =
+      (pr.rank ? '#' + pr.rank + '   \u00B7   ' : '') + tierLabel.toUpperCase() + '   \u00B7   ' + (pr.elo || 0).toLocaleString() + ' ELO';
+    const ret = Number(pr.returnPct) || 0;
+    const rEl = document.getElementById('pp-return');
+    rEl.textContent = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
+    rEl.className = 'pp-return ' + (ret >= 0 ? 'up' : 'down');
+    const hEl = document.getElementById('pp-holdings');
+    const pos = pr.positions || [];
+    if (!pos.length) { hEl.innerHTML = '<div class="pp-empty">In cash &mdash; no open positions</div>'; return; }
+    hEl.innerHTML = pos.map(h => {
+      const pct = Number(h.pct) || 0, cls = pct >= 0 ? 'up' : 'down';
+      return '<div class="pp-hold-row"><span class="pp-hold-sym">' + String(h.symbol).replace(/</g, '&lt;') + '</span>' +
+        '<span class="pp-hold-right"><span class="pp-hold-pct ' + cls + '">' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</span>' +
+        '<span class="pp-hold-side">' + (h.side === 'SHORT' ? 'SHORT' : 'LONG') + '</span></span></div>';
+    }).join('');
+  } catch (e) { document.getElementById('pp-name').textContent = 'Unavailable'; }
+}
+function closePlayerPopup(e) { document.getElementById('player-popup-overlay').style.display = 'none'; }
+
+async function renderPatchNotes() {
+  const box = document.getElementById('patchnotes-body');
+  if (!box) return;
+  const esc = s => String(s || '').replace(/</g, '&lt;');
+  try {
+    const res = await gasGet({ action: 'patch_notes' });
+    const list = (res && res.success && Array.isArray(res.patches)) ? res.patches : [];
+    if (!list.length) { box.innerHTML = '<div class="guide-coming">No patch notes yet.</div>'; return; }
+    box.innerHTML = list.map(p => {
+      const head = [p.version, p.date].filter(Boolean).join('  \u00B7  ');
+      return '<div class="patch-entry">' +
+        (head ? '<div class="patch-head">' + esc(head) + '</div>' : '') +
+        (p.title ? '<div class="patch-title">' + esc(p.title) + '</div>' : '') +
+        (p.body ? '<div class="patch-body">' + esc(p.body).replace(/\n/g, '<br>') + '</div>' : '') +
+        '</div>';
+    }).join('');
+  } catch (e) { box.innerHTML = '<div class="guide-coming">Couldn\'t load patch notes right now.</div>'; }
 }
 
 // Guide panel: top tabs (How to Play / Market / Research) + subtabs within a pane.
@@ -3264,94 +3367,94 @@ async function joinLeague() {
 // ============================================================
 // SHARE CARD GENERATOR
 // ============================================================
-function generateShareCard() {
+function getPlayerRank() {
+  try {
+    if (!playerData || !Array.isArray(leaderboard) || !leaderboard.length) return null;
+    const sorted = [...leaderboard].sort((a, b) => (b.ELO || 0) - (a.ELO || 0));
+    const idx = sorted.findIndex(p => p.PlayerID === playerData.PlayerID);
+    return idx >= 0 ? idx + 1 : null;
+  } catch (e) { return null; }
+}
+
+async function generateShareCard() {
   if (!playerData) return;
   const canvas = document.getElementById('share-canvas');
   const ctx = canvas.getContext('2d');
-  const w = 1080, h = 1080;
-  canvas.width = w;
-  canvas.height = h;
+  const w = 1080, h = 1350;
+  canvas.width = w; canvas.height = h;
 
   const elo = playerData.ELO || 0;
   const tier = getTier(elo);
+  const rank = getPlayerRank();
   const portval = playerData.PortfolioValue || STARTING_CASH;
-  const ret = ((portval - STARTING_CASH) / STARTING_CASH * 100).toFixed(2);
+  const ret = ((portval - STARTING_CASH) / STARTING_CASH) * 100;
+  const retStr = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
 
-  const tierColors = {
-    Dirt:'#8B6914', Bronze:'#cd7f32', Silver:'#c0c0c0',
-    Gold:'#ffd700', Platinum:'#60efff', Diamond:'#a8d8ea', Obsidian:'#9b59b6'
-  };
-  const tierColor = tierColors[tier.name] || '#ffffff';
+  const gold = '#d8b45a', cream = '#efe6d0', muted = '#8a8270';
+  const agedGreen = '#4a8f5b', oxblood = '#a8443b'; // the one color exception
 
-  ctx.fillStyle = '#060608';
-  ctx.fillRect(0, 0, w, h);
+  // Make sure the medieval fonts are ready before we draw text onto the canvas.
+  try {
+    await Promise.all([
+      document.fonts.load('900 62px Cinzel'), document.fonts.load('700 40px Cinzel'),
+      document.fonts.load('italic 600 78px "Cormorant Garamond"'), document.fonts.load('400 24px "JetBrains Mono"')
+    ]);
+  } catch (e) {}
 
-  const grad = ctx.createRadialGradient(w/2, 0, 0, w/2, 0, h);
-  grad.addColorStop(0, tierColor + '22');
-  grad.addColorStop(1, 'transparent');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
+  // The crest is the hero. Upload it to assets/koth-crest.png (same-origin so the card can export).
+  const crest = await new Promise(res => {
+    const im = new Image();
+    im.onload = () => res(im); im.onerror = () => res(null);
+    im.src = 'assets/koth-crest.png';
+  });
 
-  ctx.strokeStyle = tierColor + '44';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(20, 20, w-40, h-40);
+  // Dark field so the crest's gold/crimson/blue pops.
+  ctx.fillStyle = '#0a0a0c'; ctx.fillRect(0, 0, w, h);
+  const glow = ctx.createRadialGradient(w / 2, 280, 40, w / 2, 280, 900);
+  glow.addColorStop(0, 'rgba(216,180,90,0.10)'); glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 52px Arial';
+  // Ornate double gold frame.
+  ctx.strokeStyle = 'rgba(216,180,90,0.55)'; ctx.lineWidth = 3; ctx.strokeRect(34, 34, w - 68, h - 68);
+  ctx.strokeStyle = 'rgba(216,180,90,0.22)'; ctx.lineWidth = 1; ctx.strokeRect(48, 48, w - 96, h - 96);
+
   ctx.textAlign = 'center';
-  ctx.fillText('KING OF THE HILL', w/2, 120);
 
-  ctx.strokeStyle = tierColor + '66';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(200, 148);
-  ctx.lineTo(880, 148);
-  ctx.stroke();
-
-  ctx.font = '120px Arial';
-  ctx.fillText(tier.icon, w/2, 340);
-
-  ctx.fillStyle = tierColor;
-  ctx.font = 'bold 72px Arial';
-  ctx.fillText(getTierLabel(tier).toUpperCase(), w/2, 430);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 48px Arial';
-  ctx.fillText(elo.toLocaleString() + ' ELO', w/2, 510);
-
-  ctx.fillStyle = tierColor;
-  ctx.font = 'bold 56px Arial';
-  ctx.fillText('@' + (playerData.Username || 'player'), w/2, 620);
-
-  if (playerData.School) {
-    ctx.fillStyle = '#6a6a80';
-    ctx.font = '32px Arial';
-    ctx.fillText(playerData.School, w/2, 670);
+  if (crest) {
+    const cw = 520, ch = crest.height * (cw / crest.width);
+    ctx.drawImage(crest, (w - cw) / 2, 88, cw, ch);
   }
 
-  ctx.strokeStyle = '#1e1e2a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(200, 710);
-  ctx.lineTo(880, 710);
-  ctx.stroke();
+  // Title.
+  ctx.fillStyle = gold; ctx.font = '900 60px Cinzel';
+  ctx.fillText('KING OF THE HILL', w / 2, 722);
+  ctx.strokeStyle = 'rgba(216,180,90,0.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(300, 754); ctx.lineTo(780, 754); ctx.stroke();
 
-  ctx.fillStyle = '#6a6a80';
-  ctx.font = '28px Arial';
-  ctx.fillText('PORTFOLIO VALUE', w/2 - 200, 760);
-  ctx.fillText('TOTAL RETURN', w/2 + 200, 760);
+  // Name — scribe italic.
+  ctx.fillStyle = cream; ctx.font = 'italic 600 80px "Cormorant Garamond"';
+  ctx.fillText('@' + (playerData.Username || 'player'), w / 2, 852);
+  if (playerData.School) {
+    ctx.fillStyle = muted; ctx.font = 'italic 500 34px "Cormorant Garamond"';
+    ctx.fillText(playerData.School, w / 2, 902);
+  }
 
-  ctx.fillStyle = '#ffd700';
-  ctx.font = 'bold 40px Arial';
-  ctx.fillText('P' + portval.toLocaleString('en', {maximumFractionDigits:0}), w/2 - 200, 810);
+  // Tier · Rank · ELO.
+  ctx.fillStyle = gold; ctx.font = '700 38px Cinzel';
+  const parts = [getTierLabel(tier).toUpperCase()];
+  if (rank) parts.push('#' + rank);
+  parts.push(elo.toLocaleString() + ' ELO');
+  ctx.fillText(parts.join('    \u00B7    '), w / 2, 992);
 
-  ctx.fillStyle = parseFloat(ret) >= 0 ? '#00c853' : '#ff1744';
-  ctx.font = 'bold 40px Arial';
-  ctx.fillText((parseFloat(ret) >= 0 ? '+' : '') + ret + '%', w/2 + 200, 810);
+  // Return — the only splash of color, aged green/red.
+  ctx.fillStyle = muted; ctx.font = '700 26px Cinzel';
+  ctx.fillText('T O T A L   R E T U R N', w / 2, 1122);
+  ctx.fillStyle = ret >= 0 ? agedGreen : oxblood; ctx.font = '900 108px Cinzel';
+  ctx.fillText(retStr, w / 2, 1218);
 
-  ctx.fillStyle = '#3a3a50';
-  ctx.font = '24px Arial';
-  ctx.fillText('Powered by BRUB AI x Unicapital Securities', w/2, 980);
+  // The troll: plain modern mono, deadpan against all the calligraphy.
+  ctx.fillStyle = '#5a5648'; ctx.font = '400 24px "JetBrains Mono"';
+  ctx.fillText('Powered by BRUB AI \u00D7 Unicapital', w / 2, 1292);
 
   const img = document.getElementById('share-preview-img');
   img.src = canvas.toDataURL('image/png');
