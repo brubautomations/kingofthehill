@@ -2730,7 +2730,7 @@ function navTo(view) {
   if (view === 'leaderboard') renderLeaderboard();
   if (view === 'trade' && playerData) document.getElementById('trade-cash').textContent = '₱' + (playerData.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
   if (view === 'trade') setTradeMarketReminder();
-  if (view === 'trade') renderMovers();
+  if (view === 'trade') renderTradeMovers();
   if (view === 'portfolio') renderPortfolio();
   if (view === 'history') { loadTrades().then(renderHistory); loadOrders(); }
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
@@ -2758,7 +2758,7 @@ function moversScope(s) {
   document.querySelectorAll('#movers-card .movers-tab').forEach(t => t.classList.toggle('active', t.dataset.scope === s));
   paintMovers();
 }
-async function renderMovers() {
+async function renderTradeMovers() {
   try {
     const res = await gasGet({ action: 'market_movers' });
     _moversData = (res && res.success) ? res : null;
