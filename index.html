@@ -550,6 +550,20 @@ body{
 .news-toggle-btn{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);padding:6px 18px;border-radius:6px;cursor:pointer;font-weight:600;}
 .news-toggle-btn:hover{color:var(--white);}
 .news-toggle-btn.active{color:var(--koth);background:rgba(0,230,118,0.10);}
+.movers-toggle{display:inline-flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:3px;margin:10px 0 12px;}
+.movers-tab{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);padding:5px 12px;border-radius:5px;cursor:pointer;font-weight:600;}
+.movers-tab.active{color:var(--koth);background:rgba(0,230,118,0.10);}
+.movers-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.movers-col-title{font-family:'JetBrains Mono',monospace;font-size:0.56rem;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px;}
+.movers-col-title.up{color:var(--green);}
+.movers-col-title.down{color:var(--red);}
+.movers-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s;}
+.movers-row:hover{background:var(--bg3);}
+.movers-sym{font-family:'JetBrains Mono',monospace;font-size:0.76rem;color:var(--white);font-weight:700;}
+.movers-pct{font-family:'JetBrains Mono',monospace;font-size:0.7rem;font-weight:600;}
+.movers-pct.up{color:var(--green);}
+.movers-pct.down{color:var(--red);}
+.movers-empty{color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:0.66rem;padding:6px 8px;}
 .mkt-asof{font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin:0 0 14px;}
 .brief-wc{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray);opacity:0.55;margin-top:16px;text-align:right;}
 .cal-list{display:flex;flex-direction:column;gap:8px;max-width:760px;}
@@ -1542,6 +1556,17 @@ body:not(.in-app) .float-panel{ display:none; }
               <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gray);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Available Cash</div>
               <div style="font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--green);line-height:1;" id="trade-cash">₱100,000.00</div>
               <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gray);margin-top:10px;" id="trade-warn"></div>
+            </div>
+            <div class="card" id="movers-card" style="margin-top:14px;">
+              <div class="card-title">Market Movers</div>
+              <div class="movers-toggle">
+                <div class="movers-tab active" data-scope="index" onclick="moversScope('index')">Index</div>
+                <div class="movers-tab" data-scope="non" onclick="moversScope('non')">Non-Index</div>
+              </div>
+              <div class="movers-grid">
+                <div><div class="movers-col-title up">Gainers</div><div id="movers-gainers"><div class="movers-empty">&mdash;</div></div></div>
+                <div><div class="movers-col-title down">Losers</div><div id="movers-losers"><div class="movers-empty">&mdash;</div></div></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2660,6 +2685,7 @@ function navTo(view) {
   if (view === 'leaderboard') renderLeaderboard();
   if (view === 'trade' && playerData) document.getElementById('trade-cash').textContent = '₱' + (playerData.VirtualCash || 0).toLocaleString('en', {minimumFractionDigits:2});
   if (view === 'trade') setTradeMarketReminder();
+  if (view === 'trade') renderMovers();
   if (view === 'portfolio') renderPortfolio();
   if (view === 'history') { loadTrades().then(renderHistory); loadOrders(); }
   if (view === 'profile') { renderProfile(); loadSeasonHistory(); loadDailyReceipt(); }
@@ -2677,6 +2703,42 @@ function navMarket(sub) {
   const t = document.getElementById('market-view-title');
   if (t) t.textContent = MARKET_TITLES[sub] || 'Market';
   marketSub(sub);
+}
+
+// Market Movers widget (Trade screen). Fetches once, paints the active scope, click autofills the symbol.
+let _moversData = null, _moversScope = 'index';
+function moversScope(s) {
+  _moversScope = s;
+  document.querySelectorAll('#movers-card .movers-tab').forEach(t => t.classList.toggle('active', t.dataset.scope === s));
+  paintMovers();
+}
+async function renderMovers() {
+  try {
+    const res = await gasGet({ action: 'market_movers' });
+    _moversData = (res && res.success) ? res : null;
+  } catch (e) { _moversData = null; }
+  paintMovers();
+}
+function paintMovers() {
+  const g = document.getElementById('movers-gainers'), l = document.getElementById('movers-losers');
+  if (!g || !l) return;
+  if (!_moversData) { g.innerHTML = l.innerHTML = '<div class="movers-empty">&mdash;</div>'; return; }
+  const gain = _moversScope === 'index' ? _moversData.indexGainers : _moversData.nonIndexGainers;
+  const lose = _moversScope === 'index' ? _moversData.indexLosers : _moversData.nonIndexLosers;
+  const row = (s, cls) => {
+    const pct = Number(s.pct) || 0;
+    return '<div class="movers-row" onclick="pickMover(\'' + s.symbol + '\')"><span class="movers-sym">' + s.symbol +
+      '</span><span class="movers-pct ' + cls + '">' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%</span></div>';
+  };
+  g.innerHTML = (gain && gain.length) ? gain.map(s => row(s, 'up')).join('') : '<div class="movers-empty">None</div>';
+  l.innerHTML = (lose && lose.length) ? lose.map(s => row(s, 'down')).join('') : '<div class="movers-empty">None</div>';
+}
+function pickMover(sym) {
+  const el = document.getElementById('trade-stock');
+  if (!el) return;
+  el.value = sym;
+  if (typeof fetchPrice === 'function') fetchPrice(sym);
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // Guide panel: top tabs (How to Play / Market / Research) + subtabs within a pane.
