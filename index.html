@@ -580,6 +580,20 @@ body{
 .pp-hold-pct.up{color:var(--green);}
 .pp-hold-pct.down{color:var(--red);}
 .pp-hold-side{color:var(--gray);font-size:0.58rem;letter-spacing:1px;}
+.pp-stats{display:flex;justify-content:center;gap:14px;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;}
+.pp-stat{color:var(--white);}
+.pp-stat-dim{color:var(--gray);}
+.pp-bias{margin-top:18px;}
+.pp-bias-title{font-family:'JetBrains Mono',monospace;font-size:0.56rem;letter-spacing:2px;text-transform:uppercase;color:var(--gray);margin-bottom:9px;}
+.pp-bias-track{display:flex;align-items:center;gap:9px;}
+.pp-bias-end{font-family:'JetBrains Mono',monospace;font-size:0.54rem;letter-spacing:1px;color:var(--gray);}
+.pp-bias-bar{position:relative;flex:1;height:4px;background:linear-gradient(90deg,var(--green),var(--obsidian));border-radius:3px;opacity:0.45;}
+.pp-bias-dot{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;transform:translate(-50%,-50%);}
+.pp-bias-pct{font-family:'JetBrains Mono',monospace;font-size:0.68rem;font-weight:700;margin-top:9px;letter-spacing:1px;}
+.pp-hold-left{display:flex;align-items:center;gap:8px;}
+.pp-hold-weight{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);background:var(--bg2);border-radius:4px;padding:1px 6px;}
+.pp-side-long{color:var(--green)!important;}
+.pp-side-short{color:var(--obsidian)!important;}
 .pp-empty{color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:8px;}
 .patch-entry{max-width:760px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:12px;}
 .patch-head{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--koth);margin-bottom:8px;}
@@ -1715,6 +1729,8 @@ body:not(.in-app) .float-panel{ display:none; }
           <div class="pp-school" id="pp-school"></div>
           <div class="pp-rankline" id="pp-rankline"></div>
           <div class="pp-return" id="pp-return"></div>
+          <div class="pp-stats" id="pp-stats"></div>
+          <div class="pp-bias" id="pp-bias"></div>
           <div class="pp-holdings-title">Holdings</div>
           <div id="pp-holdings" class="pp-holdings"></div>
         </div>
@@ -2796,7 +2812,7 @@ async function openPlayerPopup(pid) {
   const ov = document.getElementById('player-popup-overlay');
   document.getElementById('pp-name').textContent = 'Loading\u2026';
   ['pp-school', 'pp-rankline', 'pp-return'].forEach(id => document.getElementById(id).textContent = '');
-  document.getElementById('pp-holdings').innerHTML = '';
+  ['pp-stats', 'pp-bias', 'pp-holdings'].forEach(id => document.getElementById(id).innerHTML = '');
   ov.style.display = 'flex';
   try {
     const res = await gasGet({ action: 'public_profile', playerID: pid });
@@ -2812,14 +2828,46 @@ async function openPlayerPopup(pid) {
     const rEl = document.getElementById('pp-return');
     rEl.textContent = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
     rEl.className = 'pp-return ' + (ret >= 0 ? 'up' : 'down');
+
+    // W/L record + win rate
+    const wins = pr.wins || 0, losses = pr.losses || 0, decided = wins + losses;
+    const winRate = decided > 0 ? Math.round((wins / decided) * 100) : 0;
+    document.getElementById('pp-stats').innerHTML =
+      '<span class="pp-stat"><b>' + wins + 'W</b> &middot; <b>' + losses + 'L</b></span>' +
+      '<span class="pp-stat pp-stat-dim">' + (decided > 0 ? winRate + '% win rate' : 'no closed trades') + '</span>';
+
+    // Trade Bias — lifetime long vs short trades. Dot position = % short. Green long-lean, purple short-lean, gold balanced.
+    const lt = pr.longTrades || 0, st = pr.shortTrades || 0, tot = lt + st;
+    const biasEl = document.getElementById('pp-bias');
+    if (tot > 0) {
+      const shortPct = Math.round((st / tot) * 100);
+      const dominantShort = shortPct >= 50;
+      const balanced = shortPct >= 45 && shortPct <= 55;
+      const col = balanced ? 'var(--koth)' : (dominantShort ? 'var(--obsidian)' : 'var(--green)');
+      const label = balanced ? ('BALANCED \u00B7 ' + shortPct + '% short')
+        : ((dominantShort ? shortPct : (100 - shortPct)) + '% ' + (dominantShort ? 'SHORT' : 'LONG'));
+      biasEl.innerHTML =
+        '<div class="pp-bias-title">Trade Bias</div>' +
+        '<div class="pp-bias-track"><span class="pp-bias-end">LONG</span>' +
+        '<div class="pp-bias-bar"><div class="pp-bias-dot" style="left:' + shortPct + '%;background:' + col + ';box-shadow:0 0 8px ' + col + ';"></div></div>' +
+        '<span class="pp-bias-end">SHORT</span></div>' +
+        '<div class="pp-bias-pct" style="color:' + col + ';">' + label + '</div>';
+    } else {
+      biasEl.innerHTML = '<div class="pp-bias-title">Trade Bias</div><div class="pp-bias-pct pp-stat-dim">No trades yet</div>';
+    }
+
+    // Holdings — diversification weight + colored side (green long / purple short)
     const hEl = document.getElementById('pp-holdings');
     const pos = pr.positions || [];
     if (!pos.length) { hEl.innerHTML = '<div class="pp-empty">In cash &mdash; no open positions</div>'; return; }
     hEl.innerHTML = pos.map(h => {
       const pct = Number(h.pct) || 0, cls = pct >= 0 ? 'up' : 'down';
-      return '<div class="pp-hold-row"><span class="pp-hold-sym">' + String(h.symbol).replace(/</g, '&lt;') + '</span>' +
+      const isShort = h.side === 'SHORT';
+      const weight = Number(h.weight) || 0;
+      return '<div class="pp-hold-row"><span class="pp-hold-left"><span class="pp-hold-sym">' + String(h.symbol).replace(/</g, '&lt;') + '</span>' +
+        (weight ? '<span class="pp-hold-weight">' + weight + '%</span>' : '') + '</span>' +
         '<span class="pp-hold-right"><span class="pp-hold-pct ' + cls + '">' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%</span>' +
-        '<span class="pp-hold-side">' + (h.side === 'SHORT' ? 'SHORT' : 'LONG') + '</span></span></div>';
+        '<span class="pp-hold-side ' + (isShort ? 'pp-side-short' : 'pp-side-long') + '">' + (isShort ? 'SHORT' : 'LONG') + '</span></span></div>';
     }).join('');
   } catch (e) { document.getElementById('pp-name').textContent = 'Unavailable'; }
 }
@@ -4164,7 +4212,7 @@ async function loadTradeFeed() {
       } else if (t.CloseType === 'SHORT') {
         action = `<span style="color:var(--obsidian);font-weight:700;">SHORTED</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} @ ₱${(t.EntryPrice||0).toFixed(2)}`;
       } else if (t.CloseType === 'COVER') {
-        action = `<span style="color:var(--koth);font-weight:700;">COVERED</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
+        action = `<span style="color:#f0883e;font-weight:700;">COVERED</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
       } else {
         action = `<span style="color:var(--red);font-weight:700;">SOLD</span> ${(t.Shares||0).toLocaleString()} ${t.Stock} · <span class="trade-feed-return ${retCls}">${sign}${ret}%</span>`;
       }
