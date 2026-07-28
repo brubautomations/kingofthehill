@@ -1245,6 +1245,34 @@ body:not(.in-app) .float-panel{ display:none; }
   .fp-launcher button:active { transform: scale(0.96); }
 }
 .fp-launcher { display: none; } /* hidden by default; only the mobile query shows it */
+.lg-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:8px;}
+.lg-info{min-width:0;}
+.lg-name{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:0.5px;color:var(--white);}
+.lg-id{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);}
+.lg-badge{font-family:'JetBrains Mono',monospace;font-size:0.52rem;letter-spacing:1px;color:var(--koth);background:rgba(0,230,118,0.12);border-radius:4px;padding:1px 6px;vertical-align:middle;}
+.lg-desc{color:var(--gray);font-size:0.74rem;margin-top:2px;}
+.lg-meta{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);margin-top:4px;}
+.lg-btn{font-family:'JetBrains Mono',monospace;font-size:0.64rem;font-weight:700;letter-spacing:0.5px;color:var(--koth);background:transparent;border:1px solid var(--koth);border-radius:7px;padding:8px 14px;cursor:pointer;white-space:nowrap;}
+.lg-btn:hover{background:rgba(0,230,118,0.10);}
+.lg-btn.join{color:var(--obsidian);border-color:var(--obsidian);}
+.lg-btn.join:hover{background:rgba(155,89,182,0.12);}
+#league-board-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:500;align-items:center;justify-content:center;padding:20px;}
+.lgb-card{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px;max-width:460px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
+.lgb-title{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;color:var(--white);text-align:center;letter-spacing:0.5px;}
+.lgb-sub{font-family:'JetBrains Mono',monospace;font-size:0.62rem;letter-spacing:1px;color:var(--gray);text-align:center;text-transform:uppercase;margin:4px 0 16px;}
+.lgb-board{display:flex;flex-direction:column;gap:6px;}
+.lgb-row{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;}
+.lgb-rank{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--koth);min-width:34px;}
+.lgb-user{display:flex;flex-direction:column;flex:1;min-width:0;}
+.lgb-name{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--white);font-weight:700;}
+.lgb-school{font-size:0.6rem;color:var(--gray);}
+.lgb-right{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.lgb-tier{font-family:'JetBrains Mono',monospace;font-size:0.54rem;letter-spacing:0.5px;color:var(--gray);text-transform:uppercase;}
+.lgb-elo{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--white);font-weight:600;}
+.lgb-ret{font-family:'JetBrains Mono',monospace;font-size:0.64rem;}
+.lgb-ret.up{color:var(--green);}
+.lgb-ret.down{color:var(--red);}
+.lgb-empty{color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:0.72rem;text-align:center;padding:20px;}
 </style>
 </head>
 <body>
@@ -1713,6 +1741,18 @@ body:not(.in-app) .float-panel{ display:none; }
         <div class="card">
           <div class="card-title">My Leagues</div>
           <div id="my-leagues"><div style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">You haven't joined any leagues yet.</div></div>
+        </div>
+        <div class="card" style="margin-top:14px;">
+          <div class="card-title">All Leagues</div>
+          <div id="all-leagues"><div style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">Loading&hellip;</div></div>
+        </div>
+
+        <div id="league-board-overlay" onclick="closeLeagueBoard(event)">
+          <div class="lgb-card" onclick="event.stopPropagation()">
+            <div class="lgb-title" id="lgb-title">League</div>
+            <div class="lgb-sub" id="lgb-sub"></div>
+            <div id="lgb-board" class="lgb-board"></div>
+          </div>
         </div>
       </div>
 
@@ -2753,6 +2793,7 @@ function navTo(view) {
   if (view === 'dashboard') maybeShowSplash();
   if (view === 'market') renderMarketNews();
   if (view === 'patchnotes') renderPatchNotes();
+  if (view === 'leagues') { renderMyLeagues(); renderAllLeagues(); }
 }
 
 // Market nav items all open the shared market view and switch the active pane.
@@ -3384,6 +3425,7 @@ async function createLeague() {
       document.getElementById('league-name').value = '';
       document.getElementById('league-pass').value = '';
       document.getElementById('league-desc').value = '';
+      renderMyLeagues(); renderAllLeagues();
     } else {
       showToast('error', 'Failed', res.error || 'Could not create league.');
     }
@@ -3404,6 +3446,7 @@ async function joinLeague() {
       showToast('success', 'Joined!', 'You are now in the league. Good luck.');
       document.getElementById('join-league-id').value = '';
       document.getElementById('join-league-pass').value = '';
+      renderMyLeagues(); renderAllLeagues();
     } else {
       showToast('error', 'Failed', res.error || 'Wrong ID or password.');
     }
@@ -3411,6 +3454,86 @@ async function joinLeague() {
     showToast('error', 'Error', 'Connection failed.');
   }
 }
+
+// Leagues the player belongs to (with a Leaderboard button); + a browse list of ALL leagues.
+function leagueRow(l, mine) {
+  const name = String(l.name || 'League').replace(/</g, '&lt;');
+  const desc = String(l.description || '').replace(/</g, '&lt;');
+  const badge = (mine && l.isCreator) ? '<span class="lg-badge">CREATOR</span>' : '';
+  const safeName = name.replace(/'/g, "\\'");
+  const action = mine
+    ? '<button class="lg-btn" onclick="openLeagueBoard(' + l.leagueID + ',\'' + safeName + '\')">Leaderboard</button>'
+    : '<button class="lg-btn join" onclick="prefillJoin(' + l.leagueID + ')">Join</button>';
+  return '<div class="lg-row"><div class="lg-info"><div class="lg-name">' + name + ' ' + badge +
+    ' <span class="lg-id">#' + l.leagueID + '</span></div>' +
+    (desc ? '<div class="lg-desc">' + desc + '</div>' : '') +
+    '<div class="lg-meta">' + (l.memberCount || 0) + ' member' + ((l.memberCount || 0) === 1 ? '' : 's') + '</div></div>' +
+    '<div class="lg-action">' + action + '</div></div>';
+}
+
+async function renderMyLeagues() {
+  const box = document.getElementById('my-leagues');
+  if (!box || !currentUser) return;
+  try {
+    const res = await gasGet({ action: 'my_leagues', playerID: currentUser.playerID });
+    const leagues = (res && res.success && res.leagues) ? res.leagues : [];
+    box.innerHTML = leagues.length
+      ? leagues.map(l => leagueRow(l, true)).join('')
+      : '<div style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">You haven\'t joined any leagues yet.</div>';
+  } catch (e) {
+    box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">Couldn\'t load your leagues.</div>';
+  }
+}
+
+async function renderAllLeagues() {
+  const box = document.getElementById('all-leagues');
+  if (!box) return;
+  try {
+    const res = await gasGet({ action: 'all_leagues' });
+    const leagues = (res && res.success && res.leagues) ? res.leagues : [];
+    box.innerHTML = leagues.length
+      ? leagues.map(l => leagueRow(l, false)).join('')
+      : '<div style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">No leagues yet. Create the first one.</div>';
+  } catch (e) {
+    box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray);font-size:0.78rem;">Couldn\'t load leagues.</div>';
+  }
+}
+
+function prefillJoin(id) {
+  const el = document.getElementById('join-league-id');
+  if (!el) return;
+  el.value = id;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const p = document.getElementById('join-league-pass');
+  if (p) p.focus();
+}
+
+async function openLeagueBoard(leagueID, name) {
+  const ov = document.getElementById('league-board-overlay');
+  document.getElementById('lgb-title').textContent = name || 'League';
+  document.getElementById('lgb-sub').textContent = '';
+  document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">Loading&hellip;</div>';
+  ov.style.display = 'flex';
+  try {
+    const res = await gasGet({ action: 'league_leaderboard', leagueID: leagueID });
+    if (!res || !res.success) { document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">Unavailable.</div>'; return; }
+    const board = res.board || [];
+    const count = (res.league && res.league.memberCount) || board.length;
+    document.getElementById('lgb-sub').textContent = count + ' member' + (count === 1 ? '' : 's');
+    if (!board.length) { document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">No members yet.</div>'; return; }
+    document.getElementById('lgb-board').innerHTML = board.map(p => {
+      const ret = Number(p.returnPct) || 0, retCls = ret >= 0 ? 'up' : 'down';
+      const tierLabel = (typeof getTier === 'function' && typeof getTierLabel === 'function') ? getTierLabel(getTier(p.elo || 0)) : (p.tier || '');
+      return '<div class="lgb-row"><span class="lgb-rank">#' + p.rank + '</span>' +
+        '<span class="lgb-user"><span class="lgb-name">' + String(p.username || '').replace(/</g, '&lt;') + '</span>' +
+        (p.school ? '<span class="lgb-school">' + String(p.school).replace(/</g, '&lt;') + '</span>' : '') + '</span>' +
+        '<span class="lgb-right"><span class="lgb-tier">' + tierLabel + '</span>' +
+        '<span class="lgb-elo">' + (p.elo || 0).toLocaleString() + ' ELO</span>' +
+        '<span class="lgb-ret ' + retCls + '">' + (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%</span></span></div>';
+    }).join('');
+  } catch (e) { document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">Unavailable.</div>'; }
+}
+function closeLeagueBoard(e) { document.getElementById('league-board-overlay').style.display = 'none'; }
 
 // ============================================================
 // SHARE CARD GENERATOR
