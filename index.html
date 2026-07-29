@@ -1285,6 +1285,30 @@ body:not(.in-app) .float-panel{ display:none; }
 .lgb-pending{font-family:'JetBrains Mono',monospace;font-size:0.58rem;color:var(--koth);}
 .lgb-row.pending{opacity:0.7;}
 .sh-rank{color:var(--koth);font-size:0.6rem;}
+.lgr-tabs{display:flex;gap:6px;margin-bottom:14px;}
+.lgr-tab{flex:1;font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--gray);background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 6px;cursor:pointer;}
+.lgr-tab.active{color:var(--koth);border-color:var(--koth);background:rgba(0,230,118,0.08);}
+.lgr-mem{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:6px;}
+.lgr-mem-nm{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--white);font-weight:700;}
+.lgr-mem-sc{font-size:0.58rem;color:var(--gray);margin-right:auto;}
+.lgr-adm{font-family:'JetBrains Mono',monospace;font-size:0.5rem;letter-spacing:1px;color:var(--koth);background:rgba(0,230,118,0.12);border-radius:4px;padding:2px 6px;text-transform:uppercase;}
+.lgr-act{font-family:'JetBrains Mono',monospace;font-size:0.54rem;color:var(--gray);background:transparent;border:1px solid var(--border2);border-radius:5px;padding:4px 8px;cursor:pointer;}
+.lgr-act:hover{color:var(--white);border-color:var(--gray);}
+.lgr-act.danger:hover{color:var(--red);border-color:var(--red);}
+.lgr-thread{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:7px;cursor:pointer;}
+.lgr-thread:hover{border-color:var(--koth);}
+.lgr-thread-t{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--white);font-weight:700;margin-bottom:3px;}
+.lgr-thread-m{font-family:'JetBrains Mono',monospace;font-size:0.56rem;color:var(--gray);}
+.lgr-post{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;margin-bottom:6px;}
+.lgr-post-h{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.lgr-post-u{font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:var(--koth);font-weight:700;}
+.lgr-post-tm{font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--gray);}
+.lgr-post-x{font-size:0.72rem;color:var(--white);line-height:1.4;word-break:break-word;}
+.lgr-inp{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:0.72rem;box-sizing:border-box;margin-bottom:6px;resize:vertical;}
+.lgr-send{font-family:'JetBrains Mono',monospace;font-size:0.64rem;font-weight:700;color:var(--obsidian);background:transparent;border:1px solid var(--obsidian);border-radius:7px;padding:8px 16px;cursor:pointer;}
+.lgr-send:hover{background:rgba(155,89,182,0.12);}
+.lgr-back{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--gray);background:transparent;border:none;cursor:pointer;margin-bottom:10px;padding:0;}
+.lgr-newbtn{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:700;color:var(--koth);background:transparent;border:1px solid var(--koth);border-radius:7px;padding:8px 14px;cursor:pointer;margin-bottom:12px;}
 </style>
 </head>
 <body>
@@ -1764,7 +1788,14 @@ body:not(.in-app) .float-panel{ display:none; }
           <div class="lgb-card" onclick="event.stopPropagation()">
             <div class="lgb-title" id="lgb-title">League</div>
             <div class="lgb-sub" id="lgb-sub"></div>
-            <div id="lgb-board" class="lgb-board"></div>
+            <div class="lgr-tabs">
+              <button class="lgr-tab active" data-tab="rankings" onclick="switchRoomTab('rankings')">Rankings</button>
+              <button class="lgr-tab" data-tab="members" onclick="switchRoomTab('members')">Members</button>
+              <button class="lgr-tab" data-tab="forum" onclick="switchRoomTab('forum')">Forum</button>
+            </div>
+            <div id="lgr-pane-rankings" class="lgr-pane"><div id="lgb-board" class="lgb-board"></div></div>
+            <div id="lgr-pane-members" class="lgr-pane" style="display:none;"><div id="lgr-members"></div></div>
+            <div id="lgr-pane-forum" class="lgr-pane" style="display:none;"><div id="lgr-forum"></div></div>
           </div>
         </div>
       </div>
@@ -3525,36 +3556,234 @@ function prefillJoin(id) {
   if (p) p.focus();
 }
 
+let activeRoom = { leagueID: null, name: '', isAdmin: false, roster: [], threadId: null, threadTitle: '', minDays: 10 };
+function myPID() { try { return (currentUser && currentUser.playerID != null) ? currentUser.playerID : (playerData ? playerData.PlayerID : null); } catch (e) { return null; } }
+function escapeAttr(x) { return escapeHtml(x).replace(/'/g, '&#39;'); }
+function fmtTime(ts) { try { return ts ? new Date(ts).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : ''; } catch(e){ return ''; } }
+function leagueChatBlocked(x) { try { const l = String(x||'').toLowerCase(); return CHAT_BLACKLIST.some(w => l.indexOf(w) !== -1); } catch(e){ return false; } }
+function ensureSupabase() {
+  if (chatClient) return true;
+  try {
+    if (typeof supabase === 'undefined' || SUPABASE_URL.indexOf('PASTE_') === 0) return false;
+    chatClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return true;
+  } catch (e) { return false; }
+}
+
 async function openLeagueBoard(leagueID, name) {
   const ov = document.getElementById('league-board-overlay');
   document.getElementById('lgb-title').textContent = name || 'League';
   document.getElementById('lgb-sub').textContent = '';
   document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">Loading&hellip;</div>';
+  document.getElementById('lgr-members').innerHTML = '';
+  document.getElementById('lgr-forum').innerHTML = '';
+  switchRoomTab('rankings');
   ov.style.display = 'flex';
+  activeRoom = { leagueID: leagueID, name: name || 'League', isAdmin: false, roster: [], threadId: null, threadTitle: '', minDays: 10 };
   try {
     const res = await gasGet({ action: 'league_leaderboard', leagueID: leagueID });
     if (!res || !res.success) { document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">Unavailable.</div>'; return; }
     const board = res.board || [];
     const count = (res.league && res.league.memberCount) || board.length;
     const minDays = res.crownMinDays || 10;
-    document.getElementById('lgb-sub').textContent = count + ' member' + (count === 1 ? '' : 's') + ' · ranked by ELO gained / day';
-    if (!board.length) { document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">No members yet.</div>'; return; }
-    document.getElementById('lgb-board').innerHTML = board.map(p => {
-      const perDay = Number(p.perDay) || 0, perCls = perDay > 0 ? 'up' : (perDay < 0 ? 'down' : '');
-      const gained = Number(p.gained) || 0;
-      const rankTxt = p.eligible ? ('#' + p.rank) : '—';
-      const note = p.eligible
-        ? '<span class="lgb-gained">' + (gained >= 0 ? '+' : '') + gained + ' ELO in ' + p.days + 'd</span>'
-        : '<span class="lgb-pending">' + p.days + '/' + minDays + ' days to qualify</span>';
-      return '<div class="lgb-row' + (p.eligible ? '' : ' pending') + '"><span class="lgb-rank">' + rankTxt + '</span>' +
-        '<span class="lgb-user"><span class="lgb-name">' + String(p.username || '').replace(/</g, '&lt;') + '</span>' +
-        (p.school ? '<span class="lgb-school">' + String(p.school).replace(/</g, '&lt;') + '</span>' : '') + '</span>' +
-        '<span class="lgb-right"><span class="lgb-perday ' + perCls + '">' + (perDay >= 0 ? '+' : '') + perDay + ' / day</span>' +
-        note + '</span></div>';
-    }).join('');
+    activeRoom.roster = board; activeRoom.minDays = minDays;
+    const mine = myPID();
+    const adminIDs = ((res.league && res.league.adminIDs) || []).map(String);
+    activeRoom.isAdmin = mine != null && adminIDs.indexOf(String(mine)) !== -1;
+    document.getElementById('lgb-sub').textContent = count + ' member' + (count === 1 ? '' : 's') + ' \u00b7 ranked by ELO gained / day';
+    renderLeagueRankings(board, minDays);
+    renderLeagueMembers(board);
   } catch (e) { document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">Unavailable.</div>'; }
 }
-function closeLeagueBoard(e) { document.getElementById('league-board-overlay').style.display = 'none'; }
+
+function renderLeagueRankings(board, minDays) {
+  const el = document.getElementById('lgb-board');
+  if (!board.length) { el.innerHTML = '<div class="lgb-empty">No members yet.</div>'; return; }
+  el.innerHTML = board.map(p => {
+    const perDay = Number(p.perDay) || 0, perCls = perDay > 0 ? 'up' : (perDay < 0 ? 'down' : '');
+    const gained = Number(p.gained) || 0;
+    const rankTxt = p.eligible ? ('#' + p.rank) : '\u2014';
+    const note = p.eligible
+      ? '<span class="lgb-gained">' + (gained >= 0 ? '+' : '') + gained + ' ELO in ' + p.days + 'd</span>'
+      : '<span class="lgb-pending">' + p.days + '/' + minDays + ' days to qualify</span>';
+    return '<div class="lgb-row' + (p.eligible ? '' : ' pending') + '"><span class="lgb-rank">' + rankTxt + '</span>' +
+      '<span class="lgb-user"><span class="lgb-name">' + escapeHtml(p.username || '') + (p.isAdmin ? ' <span class="lgr-adm">' + (p.isCreator ? 'Creator' : 'Admin') + '</span>' : '') + '</span>' +
+      (p.school ? '<span class="lgb-school">' + escapeHtml(p.school) + '</span>' : '') + '</span>' +
+      '<span class="lgb-right"><span class="lgb-perday ' + perCls + '">' + (perDay >= 0 ? '+' : '') + perDay + ' / day</span>' +
+      note + '</span></div>';
+  }).join('');
+}
+
+function renderLeagueMembers(board) {
+  const el = document.getElementById('lgr-members');
+  if (!board.length) { el.innerHTML = '<div class="lgb-empty">No members yet.</div>'; return; }
+  const iAmAdmin = activeRoom.isAdmin;
+  const mine = String(myPID());
+  el.innerHTML = board.map(p => {
+    const admin = !!p.isAdmin, isCreator = !!p.isCreator;
+    let actions = '';
+    if (iAmAdmin && String(p.playerID) !== mine && !isCreator) {
+      actions += admin
+        ? '<button class="lgr-act" onclick="leagueSetAdmin(' + p.playerID + ',false)">Unadmin</button>'
+        : '<button class="lgr-act" onclick="leagueSetAdmin(' + p.playerID + ',true)">Make admin</button>';
+      actions += '<button class="lgr-act danger" onclick="leagueRemove(' + p.playerID + ',&#39;' + escapeAttr(String(p.username || '')) + '&#39;)">Remove</button>';
+    }
+    return '<div class="lgr-mem"><span class="lgr-mem-nm">' + escapeHtml(p.username || '') +
+      (admin ? ' <span class="lgr-adm">' + (isCreator ? 'Creator' : 'Admin') + '</span>' : '') + '</span>' +
+      (p.school ? '<span class="lgr-mem-sc">' + escapeHtml(p.school) + '</span>' : '<span class="lgr-mem-sc"></span>') +
+      actions + '</div>';
+  }).join('');
+}
+
+function switchRoomTab(tab) {
+  ['rankings','members','forum'].forEach(t => { const pane = document.getElementById('lgr-pane-' + t); if (pane) pane.style.display = (t === tab) ? 'block' : 'none'; });
+  document.querySelectorAll('.lgr-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === tab));
+  if (tab === 'forum' && activeRoom.leagueID != null) loadLeagueThreads();
+}
+
+function closeLeagueBoard(e) { document.getElementById('league-board-overlay').style.display = 'none'; activeRoom.leagueID = null; activeRoom.threadId = null; }
+
+// ---- Admin actions (GAS) ----
+async function leagueSetAdmin(targetPID, makeAdmin) {
+  try {
+    const res = await gasPost({ action: 'set_league_admin', playerID: myPID(), leagueID: activeRoom.leagueID, targetPlayerID: targetPID, makeAdmin: makeAdmin });
+    if (res && res.success) { showToast('success', 'Leagues', res.message || 'Updated.'); openLeagueBoard(activeRoom.leagueID, activeRoom.name); setTimeout(() => switchRoomTab('members'), 200); }
+    else showToast('error', 'Leagues', (res && res.error) || 'Failed.');
+  } catch (e) { showToast('error', 'Leagues', 'Failed.'); }
+}
+async function leagueRemove(targetPID, uname) {
+  if (!confirm('Remove ' + uname + ' from this league?')) return;
+  try {
+    const res = await gasPost({ action: 'remove_league_member', playerID: myPID(), leagueID: activeRoom.leagueID, targetPlayerID: targetPID });
+    if (res && res.success) { showToast('success', 'Leagues', res.message || 'Removed.'); openLeagueBoard(activeRoom.leagueID, activeRoom.name); setTimeout(() => switchRoomTab('members'), 200); }
+    else showToast('error', 'Leagues', (res && res.error) || 'Failed.');
+  } catch (e) { showToast('error', 'Leagues', 'Failed.'); }
+}
+
+// ---- Forum (Supabase) ----
+async function loadLeagueThreads() {
+  const el = document.getElementById('lgr-forum');
+  activeRoom.threadId = null;
+  if (!ensureSupabase()) { el.innerHTML = '<div class="lgb-empty">Forum unavailable right now.</div>'; return; }
+  el.innerHTML = '<div class="lgb-empty">Loading&hellip;</div>';
+  try {
+    const { data, error } = await chatClient.from('messages')
+      .select('id,username,text,title,created_at')
+      .eq('league_id', activeRoom.leagueID).is('parent_id', null)
+      .order('created_at', { ascending: false }).limit(100);
+    if (error) { el.innerHTML = '<div class="lgb-empty">Forum unavailable right now.</div>'; return; }
+    renderThreadList(data || []);
+  } catch (e) { el.innerHTML = '<div class="lgb-empty">Forum unavailable right now.</div>'; }
+}
+
+function renderThreadList(threads) {
+  const el = document.getElementById('lgr-forum');
+  let html = '<button class="lgr-newbtn" onclick="showNewThread()">+ New thread</button>';
+  html += '<div id="lgr-newthread" style="display:none;margin-bottom:12px;">' +
+    '<input class="lgr-inp" id="lgr-nt-title" maxlength="80" placeholder="Thread title">' +
+    '<textarea class="lgr-inp" id="lgr-nt-body" rows="3" maxlength="500" placeholder="Say something&hellip;"></textarea>' +
+    '<button class="lgr-send" onclick="createThread()">Post thread</button></div>';
+  if (!threads.length) html += '<div class="lgb-empty">No threads yet. Start one.</div>';
+  else html += threads.map(t =>
+    '<div class="lgr-thread" onclick="openThread(' + t.id + ',&#39;' + escapeAttr(t.title || 'Thread') + '&#39;)">' +
+    '<div class="lgr-thread-t">' + escapeHtml(t.title || 'Untitled') + '</div>' +
+    '<div class="lgr-thread-m">' + escapeHtml(t.username || '') + ' \u00b7 ' + fmtTime(t.created_at) + '</div></div>'
+  ).join('');
+  el.innerHTML = html;
+}
+
+function showNewThread() { const n = document.getElementById('lgr-newthread'); if (n) n.style.display = (n.style.display === 'none') ? 'block' : 'none'; }
+
+async function createThread() {
+  if (!currentUser) return;
+  const title = (document.getElementById('lgr-nt-title').value || '').trim();
+  const body = (document.getElementById('lgr-nt-body').value || '').trim();
+  if (!title) { showToast('error', 'Forum', 'Give your thread a title.'); return; }
+  if (!body) { showToast('error', 'Forum', 'Write something.'); return; }
+  if (leagueChatBlocked(title + ' ' + body)) { showToast('error', 'Blocked', "That contains language that isn't allowed."); return; }
+  if (!ensureSupabase()) return;
+  try {
+    const { error } = await chatClient.from('messages').insert({ username: currentUser.username, text: body.slice(0,500), title: title.slice(0,80), league_id: activeRoom.leagueID, parent_id: null });
+    if (error) { showToast('error', 'Forum', 'Failed to post.'); return; }
+    loadLeagueThreads();
+  } catch (e) { showToast('error', 'Forum', 'Failed to post.'); }
+}
+
+async function openThread(threadId, title) {
+  activeRoom.threadId = threadId; activeRoom.threadTitle = title;
+  const el = document.getElementById('lgr-forum');
+  el.innerHTML = '<div class="lgb-empty">Loading&hellip;</div>';
+  if (!ensureSupabase()) { el.innerHTML = '<div class="lgb-empty">Forum unavailable.</div>'; return; }
+  try {
+    const { data: starter } = await chatClient.from('messages').select('id,username,text,title,created_at').eq('id', threadId).limit(1);
+    const { data: replies, error } = await chatClient.from('messages').select('id,username,text,created_at').eq('parent_id', threadId).order('created_at', { ascending: true });
+    if (error) { el.innerHTML = '<div class="lgb-empty">Forum unavailable.</div>'; return; }
+    renderThread((starter && starter[0]) || null, replies || []);
+  } catch (e) { el.innerHTML = '<div class="lgb-empty">Forum unavailable.</div>'; }
+}
+
+function rosterIsAdmin(username) { try { const r = (activeRoom.roster || []).find(x => x.username === username); return !!(r && r.isAdmin); } catch (e) { return false; } }
+
+function postRowHtml(m) {
+  const adminBadge = rosterIsAdmin(m.username) ? ' <span class="lgr-adm">Admin</span>' : '';
+  const del = activeRoom.isAdmin ? '<button class="lgr-act danger" style="margin-left:auto;" onclick="deletePost(' + m.id + ')">Delete</button>' : '';
+  return '<div class="lgr-post"><div class="lgr-post-h"><span class="lgr-post-u">' + escapeHtml(m.username || '') + '</span>' + adminBadge +
+    '<span class="lgr-post-tm" style="margin-left:' + (del ? '8px' : 'auto') + ';">' + fmtTime(m.created_at) + '</span>' + del + '</div>' +
+    '<div class="lgr-post-x">' + escapeHtml(m.text || '') + '</div></div>';
+}
+
+function renderThread(starter, replies) {
+  const el = document.getElementById('lgr-forum');
+  let html = '<button class="lgr-back" onclick="loadLeagueThreads()">&larr; All threads</button>';
+  if (starter) html += '<div class="lgr-thread-t" style="margin-bottom:8px;">' + escapeHtml(starter.title || 'Thread') + '</div>' + postRowHtml(starter);
+  html += '<div id="lgr-replies">' + replies.map(r => postRowHtml(r)).join('') + '</div>';
+  html += '<div style="margin-top:10px;"><textarea class="lgr-inp" id="lgr-reply" rows="2" maxlength="500" placeholder="Reply&hellip;"></textarea>' +
+    '<button class="lgr-send" onclick="postReply()">Reply</button></div>';
+  el.innerHTML = html;
+}
+
+async function postReply() {
+  if (!currentUser) return;
+  const ta = document.getElementById('lgr-reply');
+  const text = (ta.value || '').trim();
+  if (!text) return;
+  if (leagueChatBlocked(text)) { showToast('error', 'Blocked', "That contains language that isn't allowed."); return; }
+  if (!ensureSupabase()) return;
+  ta.value = '';
+  try {
+    const { error } = await chatClient.from('messages').insert({ username: currentUser.username, text: text.slice(0,500), league_id: activeRoom.leagueID, parent_id: activeRoom.threadId });
+    if (error) { showToast('error', 'Forum', 'Failed to reply.'); }
+  } catch (e) { showToast('error', 'Forum', 'Failed to reply.'); }
+}
+
+async function deletePost(msgId) {
+  if (!activeRoom.isAdmin) return;
+  if (!confirm('Delete this post?')) return;
+  if (!ensureSupabase()) return;
+  try {
+    const { error } = await chatClient.from('messages').delete().eq('id', msgId).not('league_id', 'is', null);
+    if (error) { showToast('error', 'Forum', 'Delete failed.'); return; }
+    if (activeRoom.threadId) openThread(activeRoom.threadId, activeRoom.threadTitle); else loadLeagueThreads();
+  } catch (e) { showToast('error', 'Forum', 'Delete failed.'); }
+}
+
+// Realtime router — global chat vs league forum
+function handleRealtimeInsert(m) {
+  if (!m) return;
+  if (m.league_id == null) { appendChatMessage(m); return; }
+  try {
+    const ov = document.getElementById('league-board-overlay');
+    if (!ov || ov.style.display === 'none') return;
+    if (String(m.league_id) !== String(activeRoom.leagueID)) return;
+    if (activeRoom.threadId != null && String(m.parent_id) === String(activeRoom.threadId)) {
+      const rep = document.getElementById('lgr-replies');
+      if (rep) rep.insertAdjacentHTML('beforeend', postRowHtml(m));
+    } else if (activeRoom.threadId == null && m.parent_id == null) {
+      const forumPane = document.getElementById('lgr-pane-forum');
+      if (forumPane && forumPane.style.display !== 'none') loadLeagueThreads();
+    }
+  } catch (e) {}
+}
 
 // ============================================================
 // SHARE CARD GENERATOR
@@ -4445,7 +4674,8 @@ async function loadChatMessages() {
 
     const { data, error } = await chatClient
       .from('messages')
-      .select('username,text,created_at')
+      .select('username,text,created_at,league_id')
+      .is('league_id', null)
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) { chatStatus('Chat unavailable right now.'); return; }
@@ -4458,7 +4688,7 @@ async function loadChatMessages() {
       chatClient._kothSubscribed = true;
       chatClient.channel('koth-chat')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
-          payload => appendChatMessage(payload.new))
+          payload => handleRealtimeInsert(payload.new))
         .subscribe();
     }
   } catch (e) {
