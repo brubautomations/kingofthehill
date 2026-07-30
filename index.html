@@ -3581,8 +3581,10 @@ async function openLeagueBoard(leagueID, name) {
   ov.style.display = 'flex';
   activeRoom = { leagueID: leagueID, name: name || 'League', isAdmin: false, roster: [], threadId: null, threadTitle: '', minDays: 10 };
   try {
-    const res = await gasGet({ action: 'league_leaderboard', leagueID: leagueID });
+    const res = await gasGet({ action: 'league_leaderboard', leagueID: leagueID, playerID: myPID() });
     if (!res || !res.success) { document.getElementById('lgb-board').innerHTML = '<div class="lgb-empty">Unavailable.</div>'; return; }
+    // PRIVATE ROOM — not a member: show nothing inside, point them at Join instead.
+    if (res.locked) { closeLeagueBoard(); promptJoinLeague(leagueID, (res.league && res.league.name) || name); return; }
     const board = res.board || [];
     const count = (res.league && res.league.memberCount) || board.length;
     const minDays = res.crownMinDays || 10;
@@ -3642,6 +3644,14 @@ function switchRoomTab(tab) {
 }
 
 function closeLeagueBoard(e) { document.getElementById('league-board-overlay').style.display = 'none'; activeRoom.leagueID = null; activeRoom.threadId = null; }
+
+// Not a member of a private league: bounce to the existing Join fields instead of the room.
+function promptJoinLeague(leagueID, name) {
+  try {
+    showToast('error', 'Private league', (name ? name + ' is' : 'That league is') + ' private \u2014 join with the password to see inside.');
+    prefillJoin(leagueID);
+  } catch (e) {}
+}
 
 // ---- Admin actions (GAS) ----
 async function leagueSetAdmin(targetPID, makeAdmin) {
