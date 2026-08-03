@@ -2278,11 +2278,11 @@ async function loadApp() {
   document.getElementById('page-app').style.display = 'flex';
   document.getElementById('page-app').classList.add('active');
 
-  await Promise.all([
-    loadPlayerData(),
-    loadHoldings(),
-    loadLeaderboard()
-  ]);
+  // Render the shell immediately and let panels fill in as data lands, instead of staring at a
+  // blank app until all three finish. Player data still gates the bits that need it.
+  const _boot = Promise.all([ loadPlayerData(), loadHoldings(), loadLeaderboard() ]);
+  _boot.then(() => { try { renderDashboard(); renderTopbar(); } catch (e) {} });
+  await Promise.race([ _boot, new Promise(r => setTimeout(r, 2500)) ]);
   loadTicker();
   loadNewsTicker();
   loadAds();
@@ -2291,7 +2291,7 @@ async function loadApp() {
   loadChatMessages();
   loadSeasonCountdown();
   loadPSEi();
-  setInterval(loadPSEi, 60000);
+  setInterval(loadPSEi, 300000);   // 5 min — matches the server cache window
 
   renderDashboard();
   renderTopbar();
@@ -3920,10 +3920,48 @@ async function gasPost(data) {
   return res.json();
 }
 
+// Short-lived response cache + in-flight de-duplication + a timeout.
+// Several panels ask for the same thing at once (leaderboard, season, prices); without this,
+// each one fired its own request and a single slow call could hang a panel forever.
+const _gasCache = new Map();     // key -> { t, data }
+const _gasInflight = new Map();  // key -> Promise
+const _GAS_TTL = {               // ms a response stays reusable
+  leaderboard: 20000, get_season: 300000, get_prices: 30000, get_price: 30000,
+  recent_trades: 20000, get_psei: 120000, get_ads: 300000, market_news: 300000,
+  market_brief: 300000, market_data: 300000, market_calendar: 300000,
+  quant_signals: 300000, patch_notes: 300000, all_leagues: 30000
+};
+
 async function gasGet(params) {
   const query = Object.entries(params).map(([k,v]) => k + '=' + encodeURIComponent(v)).join('&');
-  const res = await fetch(GAS_URL + '?' + query);
-  return res.json();
+  const key = query;
+  const ttl = _GAS_TTL[params.action] || 0;
+  const now = Date.now();
+
+  if (ttl) {
+    const c = _gasCache.get(key);
+    if (c && (now - c.t) < ttl) return c.data;
+  }
+  const inflight = _gasInflight.get(key);
+  if (inflight) return inflight;   // identical request already running — reuse it
+
+  const p = (async () => {
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 25000) : null;
+    try {
+      const res = await fetch(GAS_URL + '?' + query, ctrl ? { signal: ctrl.signal } : undefined);
+      const data = await res.json();
+      if (ttl && data && data.success) _gasCache.set(key, { t: Date.now(), data });
+      return data;
+    } catch (e) {
+      return { success: false, error: 'timeout' };
+    } finally {
+      if (timer) clearTimeout(timer);
+      _gasInflight.delete(key);
+    }
+  })();
+  _gasInflight.set(key, p);
+  return p;
 }
 
 // ============================================================
