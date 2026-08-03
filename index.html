@@ -2409,12 +2409,10 @@ async function renderHoldingsQuick() {
 
   // Fetch live prices for all holdings
   const priceMap = {};
-  await Promise.all(holdings.map(async h => {
-    try {
-      const res = await gasGet({ action: 'get_price', symbol: h.Stock });
-      if (res.success && res.price > 0) priceMap[h.Stock] = res.price;
-    } catch(e) {}
-  }));
+  {
+    const _p = await gasPrices(holdings.map(h => h.Stock));
+    Object.keys(_p).forEach(k => { if (_p[k] && _p[k].price > 0) priceMap[k] = _p[k].price; });
+  }
 
   let totalPortValue = playerData?.VirtualCash || 0;
   const sortedHoldings = [...holdings].sort((a,b) => new Date(b.EntryDate||0) - new Date(a.EntryDate||0));
@@ -2575,12 +2573,10 @@ async function renderPortfolio() {
 
   // Fetch live prices for open holdings
   const livePrices = {};
-  await Promise.all(holdings.map(async h => {
-    try {
-      const res = await gasGet({ action: 'get_price', symbol: h.Stock });
-      if (res.success && res.price > 0) livePrices[h.Stock] = res.price;
-    } catch(e) {}
-  }));
+  {
+    const _p = await gasPrices(holdings.map(h => h.Stock));
+    Object.keys(_p).forEach(k => { if (_p[k] && _p[k].price > 0) livePrices[k] = _p[k].price; });
+  }
 
   // Live total value = cash + market value of open holdings + pending orders (reserved cost).
   // Shorts are valued as collateral + (entry - price) * shares (gain when price falls).
@@ -3556,6 +3552,16 @@ function prefillJoin(id) {
   if (p) p.focus();
 }
 
+
+// Batched price fetch — ONE round trip for many symbols instead of one call per symbol.
+async function gasPrices(symbols) {
+  const list = (symbols || []).map(x => String(x || '').trim().toUpperCase()).filter(Boolean);
+  if (!list.length) return {};
+  try {
+    const res = await gasGet({ action: 'get_prices', symbols: list.join(',') });
+    return (res && res.success && res.prices) ? res.prices : {};
+  } catch (e) { return {}; }
+}
 let activeRoom = { leagueID: null, name: '', isAdmin: false, roster: [], threadId: null, threadTitle: '', minDays: 10 };
 function myPID() { try { return (currentUser && currentUser.playerID != null) ? currentUser.playerID : (playerData ? playerData.PlayerID : null); } catch (e) { return null; } }
 function escapeAttr(x) { return escapeHtml(x).replace(/'/g, '&#39;'); }
@@ -4127,12 +4133,13 @@ async function loadLandingMarket() {
     'DMC','EMI','GLO','GTCAP','ICT','JFC','JGS','LTG','MBT','MER',
     'MONDE','PGOLD','PLUS','RCR','SCC','SM','SMC','SMPH','TEL','URC'];
   const rows = [];
-  await Promise.all(pool.map(async sym => {
-    try {
-      const res = await gasGet({ action: 'get_price', symbol: sym });
-      if (res.success && res.price > 0) rows.push({ sym, price: res.price, chg: res.changePct || 0 });
-    } catch(e) {}
-  }));
+  {
+    const _p = await gasPrices(pool);
+    pool.forEach(sym => {
+      const d = _p[sym];
+      if (d && d.price > 0) rows.push({ sym, price: d.price, chg: d.changePct || 0 });
+    });
+  }
   const gEl = document.getElementById('lp-gainers');
   const lEl = document.getElementById('lp-losers');
   if (!gEl || !lEl) return;
@@ -4313,15 +4320,18 @@ async function loadTicker(targetId) {
   try {
     const stocks = ['JFC','ALI','SM','BDO','PLDT','MER','BPI','ICT','SMPH','GLO','MBT','AEV','URC','MEG','CNPF','DITO','GMA7','BLOOM','RLC','PGOLD'];
     let items = '';
+    // ONE round trip for all 20 (this used to be 20 sequential calls, each waiting on the last).
+    const prices = await gasPrices(stocks);
     for (const sym of stocks) {
-      const res = await gasGet({ action: 'get_price', symbol: sym });
-      if (res.success) {
-        const cls = res.changePct >= 0 ? 'up' : 'down';
-        const sign = res.changePct >= 0 ? '+' : '';
+      const d = prices[sym];
+      if (d && d.price > 0) {
+        const chg = d.changePct || 0;
+        const cls = chg >= 0 ? 'up' : 'down';
+        const sign = chg >= 0 ? '+' : '';
         items += `<div class="ticker-item">
           <span class="ticker-sym">${sym}</span>
-          <span class="ticker-price">₱${res.price.toFixed(2)}</span>
-          <span class="ticker-change ${cls}">${sign}${res.changePct.toFixed(2)}%</span>
+          <span class="ticker-price">₱${d.price.toFixed(2)}</span>
+          <span class="ticker-change ${cls}">${sign}${chg.toFixed(2)}%</span>
         </div>`;
       }
     }
