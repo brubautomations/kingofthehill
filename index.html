@@ -1960,10 +1960,6 @@ body:not(.in-app) .float-panel{ display:none; }
           </div>
         </div>
         <div class="card" style="margin-top:14px;">
-          <div class="card-title">Career Stats</div>
-          <div id="career-stats"><div style="text-align:center;padding:20px;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);">Loading...</div></div>
-        </div>
-        <div class="card" style="margin-top:14px;">
           <div class="card-title">Season History</div>
           <div id="season-history-list">
             <div style="text-align:center;padding:20px;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--gray);">Loading...</div>
@@ -4516,23 +4512,6 @@ function updateCountdown() {
 // ============================================================
 async function loadSeasonHistory() {
   try {
-    // Career card from the player's lifetime counters (never reset).
-    const cEl = document.getElementById('career-stats');
-    if (cEl) {
-      const pd = playerData || {};
-      const lt = pd.LifetimeTrades || 0, lw = pd.LifetimeWins || 0, ll = pd.LifetimeLosses || 0;
-      const wr = lt > 0 ? (lw / lt * 100).toFixed(0) : '0';
-      const bestRet = Number(pd.LifetimeBestReturnPct || 0);
-      const sp = pd.SeasonsPlayed || 0;
-      cEl.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:14px 22px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:0.72rem;">
-        <div><div style="color:var(--gray);font-size:0.54rem;letter-spacing:1px;">TRADES</div><div style="color:var(--white);font-size:0.95rem;">${lt}</div></div>
-        <div><div style="color:var(--gray);font-size:0.54rem;letter-spacing:1px;">W / L</div><div style="color:var(--white);font-size:0.95rem;">${lw} / ${ll}</div></div>
-        <div><div style="color:var(--gray);font-size:0.54rem;letter-spacing:1px;">WIN RATE</div><div style="color:var(--koth);font-size:0.95rem;">${wr}%</div></div>
-        <div><div style="color:var(--gray);font-size:0.54rem;letter-spacing:1px;">BEST SEASON</div><div style="color:${bestRet>=0?'var(--green)':'var(--red)'};font-size:0.95rem;">${bestRet>=0?'+':''}${bestRet.toFixed(1)}%</div></div>
-        <div><div style="color:var(--gray);font-size:0.54rem;letter-spacing:1px;">SEASONS</div><div style="color:var(--white);font-size:0.95rem;">${sp}</div></div>
-      </div>`;
-    }
-
     const res = await gasGet({ action: 'get_season_history', playerID: currentUser.playerID });
     const el = document.getElementById('season-history-list');
     if (!res.success || res.history.length === 0) {
